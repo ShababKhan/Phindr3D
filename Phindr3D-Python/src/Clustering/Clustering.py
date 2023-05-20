@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
+import umap
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA, KernelPCA
 from sklearn.preprocessing import StandardScaler
@@ -339,6 +340,12 @@ class Clustering:
         elif plot == "Sammon":
             S, E = self.sammon(self, X, dim)
             return (S)
+        elif plot == "UMAP":
+            sc = StandardScaler()
+            X_show = sc.fit_transform(X)
+            reducer = umap.UMAP(n_components=dim, init='random')
+            U = reducer.fit_transform(X_show)
+            return (U)
         else:
             raise Exception("Invalid plot")
     # end plot_type

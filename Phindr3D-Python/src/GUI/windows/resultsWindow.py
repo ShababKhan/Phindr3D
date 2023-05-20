@@ -71,7 +71,7 @@ class resultsWindow(QDialog):
         exportdata = QPushButton("Export Current Plot Data (.JSON)")
         cmap=QPushButton("Legend Colours")
         map_type = QComboBox()
-        map_type.addItems(["PCA","t-SNE","Sammon"])
+        map_type.addItems(["PCA","t-SNE","Sammon", "UMAP"])
         twod = QRadioButton("2D")
         threed = QRadioButton("3D")
         dimensionbox = QGroupBox()
