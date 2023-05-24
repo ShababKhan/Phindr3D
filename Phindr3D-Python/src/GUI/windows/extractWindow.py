@@ -16,9 +16,9 @@
 
 import os
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from PyQt6.QtWidgets import *
+from PyQt6.QtGui import *
+from PyQt6.QtCore import *
 
 try:
     from .regexWindow import regexWindow
@@ -46,7 +46,7 @@ class extractWindow(QDialog):
         imagerootbox.setReadOnly(True)
         imagerootbox.setPlaceholderText(directory)
         imagerootbox.setFixedSize(450, 50)
-        imagerootbox.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
+        imagerootbox.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
         imagerootbox.setFont(largetext)
 
         samplelabel = QLabel()
@@ -55,7 +55,7 @@ class extractWindow(QDialog):
         samplefilebox = QTextEdit()
         samplefilebox.setReadOnly(True)
         samplefilebox.setPlaceholderText(self.samplefilename)
-        samplefilebox.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
+        samplefilebox.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
         samplefilebox.setFont(largetext)
         samplefilebox.setFixedSize(450, 30)
 
@@ -68,7 +68,7 @@ class extractWindow(QDialog):
             "Evaluate Regular Expression.")
 
         expressionbox = QLineEdit()
-        expressionbox.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
+        expressionbox.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
         expressionbox.setFont(largetext)
         expressionbox.setFixedSize(450, 30)
         expressionbox.setPlaceholderText("Enter Regular Expression Here")
@@ -85,7 +85,7 @@ class extractWindow(QDialog):
         outlabel.setText("Enter output file name")
 
         outputfilebox = QLineEdit()
-        outputfilebox.setAlignment(Qt.AlignCenter)
+        outputfilebox.setAlignment(Qt.AlignmentFlag.AlignCenter)
         outputfilebox.setFont(largetext)
         outputfilebox.setPlaceholderText("Output Metadata File Name")
         outputfilebox.setFixedSize(450, 30)
@@ -132,22 +132,22 @@ class extractWindow(QDialog):
                         created = DataFunctions.createMetadata(imagedir, regex)
                     if created:
                         alert.setText("Metadatafile creation success.")
-                        alert.setIcon(QMessageBox.Information)
+                        alert.setIcon(QMessageBox.Icon.Information)
                         alert.setWindowTitle("Notice")
                         self.close()
                     else:
                         alert.setText("Error: No Regex matches found in selected folder.")
-                        alert.setIcon(QMessageBox.Critical)
+                        alert.setIcon(QMessageBox.Icon.Critical)
                 except MissingChannelStackError:
                     alert.setText("Error: No Channel and/or Stack groups found in regex.")
-                    alert.setIcon(QMessageBox.Critical)
+                    alert.setIcon(QMessageBox.Icon.Critical)
                 alert.show()
                 alert.exec()
             except WindowsError:
                 alert = QMessageBox()
                 alert.setWindowTitle("Error")
                 alert.setText("No such image directory exists.")
-                alert.setIcon(QMessageBox.Critical)
+                alert.setIcon(QMessageBox.Icon.Critical)
                 alert.show()
                 alert.exec()
         # end createFile
@@ -160,7 +160,7 @@ class extractWindow(QDialog):
                 alert = QMessageBox()
                 alert.setWindowTitle("Error")
                 alert.setText("Please enter a regular expression to evaluate")
-                alert.setIcon(QMessageBox.Critical)
+                alert.setIcon(QMessageBox.Icon.Critical)
                 alert.show()
                 alert.exec()
                 return
@@ -168,7 +168,7 @@ class extractWindow(QDialog):
                 alert = QMessageBox()
                 alert.setWindowTitle("Error")
                 alert.setText("No sample file was found. Please check the selected image directory.")
-                alert.setIcon(QMessageBox.Critical)
+                alert.setIcon(QMessageBox.Icon.Critical)
                 alert.show()
                 alert.exec()
                 return

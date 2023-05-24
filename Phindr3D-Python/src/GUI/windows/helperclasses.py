@@ -20,9 +20,9 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from PyQt6.QtWidgets import *
+from PyQt6.QtGui import *
+from PyQt6.QtCore import *
 
 class MplCanvas(FigureCanvasQTAgg):
     """matplotlib figure-plot creation"""
@@ -115,7 +115,7 @@ class selectWindow(object):
         win.setFixedSize(minsize)
         win.show()
         win.setWindowFlags(
-            win.windowFlags() | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
+            win.windowFlags() | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         win.exec()
     # end constructor
 
@@ -179,10 +179,10 @@ class errorWindow(object):
         alert = QMessageBox()
         alert.setWindowTitle(win_title)
         alert.setText(text)
-        alert.setIcon(QMessageBox.Critical)
+        alert.setIcon(QMessageBox.Icon.Critical)
         alert.show()
         alert.setWindowFlags(
-            alert.windowFlags() | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
+            alert.windowFlags() | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         alert.exec()
     # end constructor
 # end errorWindow

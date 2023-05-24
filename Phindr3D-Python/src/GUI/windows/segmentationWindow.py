@@ -14,9 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from PyQt6.QtWidgets import *
+from PyQt6.QtGui import *
+from PyQt6.QtCore import *
 
 try:
     from ...Data import *
@@ -116,7 +116,7 @@ class segmentationWindow(QDialog):
                 except ValueError:
                     alert = self.buildErrorWindow(
                         'Segmentation settings can only include numerical values.',
-                        QMessageBox.Critical, "Value error")
+                        QMessageBox.Icon.Critical, "Value error")
                     alert.exec()
                     return False
             # end updateSettingVals
@@ -141,11 +141,11 @@ class segmentationWindow(QDialog):
                         updateSettingDisplay(self)
                     except:
                         alert = self.buildErrorWindow(
-                            'Failed to load segmentation settings file.', QMessageBox.Critical, "Load error")
+                            'Failed to load segmentation settings file.', QMessageBox.Icon.Critical, "Load error")
                         alert.exec()
                 else:
                     load_setting_win = self.buildErrorWindow(
-                        "Select valid Segmentation Settings File (.json)", QMessageBox.Critical, "Select valid file")
+                        "Select valid Segmentation Settings File (.json)", QMessageBox.Icon.Critical, "Select valid file")
                     load_setting_win.show()
                     load_setting_win.exec()
             # end loadClicked
@@ -160,7 +160,7 @@ class segmentationWindow(QDialog):
                         savebutton.setToolTip(f'Last save at: {savefile}')
                     except FileNotFoundError:
                         alert = self.buildErrorWindow(
-                            'Settings not saved.', QMessageBox.Critical, "File not found error")
+                            'Settings not saved.', QMessageBox.Icon.Critical, "File not found error")
                         alert.exec()
             # end save2jsonClicked
 
@@ -208,15 +208,15 @@ class segmentationWindow(QDialog):
 
                 except MissingChannelStackError:
                     errortext = "Metadata Extraction Failed: Channel/Stack/ImageID column(s) missing and/or invalid."
-                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical, "Metadata error")
+                    alert = self.buildErrorWindow(errortext, QMessageBox.Icon.Critical, "Metadata error")
                     alert.exec()
                 except FileNotFoundError:
                     alert = self.buildErrorWindow("Metadata Extraction Failed: Metadata file does not exist.",
-                        QMessageBox.Critical, "Metadata error")
+                        QMessageBox.Icon.Critical, "Metadata error")
                     alert.exec()
             else:
                 load_metadata_win = self.buildErrorWindow(
-                    "Select Valid Metadata File (.txt)", QMessageBox.Critical, "Select valid file")
+                    "Select Valid Metadata File (.txt)", QMessageBox.Icon.Critical, "Select valid file")
                 load_metadata_win.show()
                 load_metadata_win.exec()
         # End loadMetadata
@@ -233,7 +233,7 @@ class segmentationWindow(QDialog):
                 self.segmentation.outputDir = dirname
                 outputbutton.setToolTip(dirname)
             else:
-                alert = self.buildErrorWindow("Select Valid Directory.", QMessageBox.Critical, "Select valid directory")
+                alert = self.buildErrorWindow("Select Valid Directory.", QMessageBox.Icon.Critical, "Select valid directory")
                 alert.exec()
         # End setOutputPath
         
@@ -275,17 +275,17 @@ class segmentationWindow(QDialog):
                 setOutputPath(self, outputpath)
                 if self.segmentation.outputDir == None:
                     return None
-            alert = self.buildErrorWindow('Start Segmentation?', QMessageBox.Information, "Begin")
+            alert = self.buildErrorWindow('Start Segmentation?', QMessageBox.Icon.Information, "Begin")
             alert.exec()
             self.segmentation.createSubfolders()
             self.segmentation.RunSegmentation(self.metadata)
             if self.segmentation.segmentationSuccess:
-                alert = self.buildErrorWindow('Segmentation Completed.', QMessageBox.Information, "Complete")
+                alert = self.buildErrorWindow('Segmentation Completed.', QMessageBox.Icon.Information, "Complete")
                 alert.exec()
                 self.focusIM, self.labelIM = self.segmentation.getCurrentIMs()
                 showSegmentation(self)   
             else:
-                alert = self.buildErrorWindow('Segmentation Failed.', QMessageBox.Critical, "Segmentation error")
+                alert = self.buildErrorWindow('Segmentation Failed.', QMessageBox.Icon.Critical, "Segmentation error")
                 alert.exec()
         # End segmentImages
 

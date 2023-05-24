@@ -16,9 +16,9 @@
 
 import numpy as np
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from PyQt6.QtWidgets import *
+from PyQt6.QtGui import *
+from PyQt6.QtCore import *
 
 class colorchannelWindow(object):
     """Build a GUI window to allow a choice of colors by the user."""
@@ -28,7 +28,7 @@ class colorchannelWindow(object):
         win.setWindowTitle(win_title)
         title = QLabel(col_title)
         title.setFont(QFont('Arial', 25))
-        title.setAlignment(Qt.AlignCenter)
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         win.setLayout(QVBoxLayout())
         win.layout().addWidget(title)
         #label button layout

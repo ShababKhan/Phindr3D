@@ -18,9 +18,9 @@ import os
 import sys
 from array import *
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from PyQt6.QtWidgets import *
+from PyQt6.QtGui import *
+from PyQt6.QtCore import *
 
 class regexWindow(QDialog):
     """Build a GUI window for the user to assemble a regular expression."""
@@ -47,7 +47,7 @@ class regexWindow(QDialog):
         self.samplefilebox = QTextEdit()
         self.samplefilebox.setReadOnly(True)
         self.samplefilebox.setPlaceholderText(self.samplefile)
-        self.samplefilebox.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
+        self.samplefilebox.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
         self.samplefilebox.setFont(largetext)
         self.samplefilebox.setFixedSize(450, 30)
 
@@ -76,7 +76,7 @@ class regexWindow(QDialog):
         addGroup.setFixedHeight(30)
 
         groupbox = QLineEdit()
-        groupbox.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
+        groupbox.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
         groupbox.setFont(largetext)
         groupbox.setFixedSize(200, 30)
         groupbox.setPlaceholderText("Group Name")
@@ -87,7 +87,7 @@ class regexWindow(QDialog):
 
         self.regexview = QTextEdit()
         self.regexview.setPlaceholderText(self.samplefile)
-        self.regexview.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
+        self.regexview.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
         self.regexview.setFont(largetext)
         self.regexview.setFixedSize(450, 60)
 
@@ -129,7 +129,7 @@ class regexWindow(QDialog):
             # show a message and return from this function
             if sellength == 0:
                 errWin = self.buildErrorWindow("Use the cursor to select a value in the file name to associate with the Group Name.",
-                    QMessageBox.Critical, "Select Value")
+                    QMessageBox.Icon.Critical, "Select Value")
                 errWin.exec()
                 return
 
@@ -140,7 +140,7 @@ class regexWindow(QDialog):
             if testVal:
                 errWin = self.buildErrorWindow("You have already defined a group that includes part or all "
                     + "of your current selection. To redefine parts of the file name, click Reset to start over.",
-                    QMessageBox.Critical, "Previously Selected Characters")
+                    QMessageBox.Icon.Critical, "Previously Selected Characters")
                 errWin.exec()
                 return
 
@@ -282,7 +282,7 @@ class example_regex(QDialog):
         incorrect_img.setPixmap(QPixmap(os.path.join(path, 'regex_incorrect_example.png')))
         #add Widgets/layout
         layout.addWidget(examplelabel1, 0, 0)
-        layout.addWidget(ex1_img, 1, 0, Qt.AlignCenter)
+        layout.addWidget(ex1_img, 1, 0, Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(examplelabel2, 2, 0)
         layout.addWidget(incorrect_img, 3, 0)
         self.setLayout(layout)

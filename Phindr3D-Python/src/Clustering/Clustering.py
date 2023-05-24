@@ -23,8 +23,8 @@ from scipy.spatial.distance import cdist
 import sklearn.metrics as met
 import numpy as np
 import matplotlib
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 import pandas as pd
 try:
     from ..GUI.windows.helperclasses import *
@@ -69,7 +69,7 @@ class setcluster(object):
                     plot_data, labels, None, None, None, group))
         btn_close.clicked.connect(lambda: win.close())
         win.show()
-        win.setWindowFlags(win.windowFlags() | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
+        win.setWindowFlags(win.windowFlags() | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         win.exec()
     # end constructor
 
@@ -302,9 +302,9 @@ class perplexity_set(object):
         win.layout().addRow(label, perplexityset)
         win.layout().addRow(btn_ok)
         btn_ok.clicked.connect(lambda: self.confirmed_perplexity(perplexityset.value(), win))
-        win.setWindowFlag(Qt.WindowCloseButtonHint, False)
+        win.setWindowFlag(Qt.WindowType.WindowCloseButtonHint, False)
         win.show()
-        win.setWindowFlags(win.windowFlags() | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
+        win.setWindowFlags(win.windowFlags() | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         win.exec()
     # end constructor
 

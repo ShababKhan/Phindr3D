@@ -24,7 +24,7 @@ import numpy as np
 import PIL.Image
 from scipy.stats.mstats import mquantiles
 import pickle
-from PyQt5 import QtGui
+from PyQt6 import QtGui
 
 try:
     from .external_windows import *
@@ -76,18 +76,18 @@ class MainGUI(QWidget, external_windows):
         self.color = [(0, 0.45, 0.74), (0.85, 0.33, 0.1), (0.93, 0.69, 0.13)]
         self.ch_len=1
         layout = QGridLayout()
-        layout.setAlignment(Qt.AlignBottom)
+        layout.setAlignment(Qt.AlignmentFlag.AlignBottom)
         # All widgets initialized here, to be placed in their proper section of GUI
         loadmeta = QPushButton("Load MetaData")
         setvoxel = QPushButton("Set Voxel Parameters")
         sv = QCheckBox("SV")
         mv = QCheckBox("MV")
         adjust_thresh = QLabel("Adjust Image Threshold")
-        threshbar = QSlider(Qt.Horizontal)
+        threshbar = QSlider(Qt.Orientation.Horizontal)
         threshbar.setMaximum(100)
         setcolors = QPushButton("Set Channel Colors")
         slicescroll = QLabel("Slice Scroller")
-        slicescrollbar = QSlider(Qt.Horizontal)
+        slicescrollbar = QSlider(Qt.Orientation.Horizontal)
         slicescrollbar.setMinimum(0)
         slicescrollbar.setPageStep(1)
         slicescrollbar.setSingleStep(1)
@@ -203,7 +203,7 @@ class MainGUI(QWidget, external_windows):
             """
             if not self.metadata.GetMetadataFilename():
                 alert = self.buildErrorWindow(
-                    "Metadata not found!!", QMessageBox.Critical, "Metadata not found")
+                    "Metadata not found!!", QMessageBox.Icon.Critical, "Metadata not found")
                 alert.exec()
             elif buttonPressed == "Set Voxel Parameters":
                 try:
@@ -266,21 +266,21 @@ class MainGUI(QWidget, external_windows):
                             slicescrollbar, img_plot, sv, mv, values, self.img_ind, imgwindow)
                 except Exception as e:
                     errortext = "Could not set voxel parameters: " + str(e)
-                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical, "Parameter error")
+                    alert = self.buildErrorWindow(errortext, QMessageBox.Icon.Critical, "Parameter error")
                     alert.exec()
             elif buttonPressed == "Set Channel Colors":
                 color = QColorDialog.getColor()
                 return color
             elif buttonPressed == "Image Go":
                 errortext = "Image Out of Range"
-                alert = self.buildErrorWindow(errortext, QMessageBox.Critical, "Image error")
+                alert = self.buildErrorWindow(errortext, QMessageBox.Icon.Critical, "Image error")
                 alert.exec()
             elif buttonPressed == "Phind":
                 try:
                     self.phindButtonAction()
                 except Exception as e:
                     errortext = "Could not execute Phind operation: " + str(e)
-                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical, "Could not Phind")
+                    alert = self.buildErrorWindow(errortext, QMessageBox.Icon.Critical, "Could not Phind")
                     alert.exec()
         # end metadataError
 
@@ -288,7 +288,7 @@ class MainGUI(QWidget, external_windows):
             """Display an error window if export session is clicked with no metadata."""
             if not self.metadata.GetMetadataFilename():
                 alert = self.buildErrorWindow(
-                    "No variables to export!!", QMessageBox.Critical, "Output error")
+                    "No variables to export!!", QMessageBox.Icon.Critical, "Output error")
                 alert.exec()
         # end exportError
 
@@ -337,30 +337,30 @@ class MainGUI(QWidget, external_windows):
                     if not issue:
                         alert = self.buildErrorWindow(
                             "Metadata Extraction Completed.",
-                            QMessageBox.Information, "Notice")
+                            QMessageBox.Icon.Information, "Notice")
                         alert.exec()
                 except MissingChannelStackError:
                     errortext = "Metadata Extraction Failed: " \
                         + "Channel/Stack/ImageID column(s) missing and/or invalid."
-                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical, "Missing data")
+                    alert = self.buildErrorWindow(errortext, QMessageBox.Icon.Critical, "Missing data")
                     alert.exec()
                 except FileNotFoundError:
                     errortext = "Metadata Extraction Failed: Metadata file does not exist."
-                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical, "Metadata file error")
+                    alert = self.buildErrorWindow(errortext, QMessageBox.Icon.Critical, "Metadata file error")
                     alert.exec()
                 except InvalidImageError:
                     errortext = "Metadata Extraction Failed: " \
                         + "Invalid Image type (must be grayscale)."
-                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical, "Image type error")
+                    alert = self.buildErrorWindow(errortext, QMessageBox.Icon.Critical, "Image type error")
                     alert.exec()
                 except Exception as e:
                     errortext = "Metadata Extraction Failed: " + str(e)
-                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical, "Metadata error")
+                    alert = self.buildErrorWindow(errortext, QMessageBox.Icon.Critical, "Metadata error")
                     alert.exec()
                     return
             else:
                 load_metadata_win = self.buildErrorWindow(
-                    "Select Valid Metadatafile (.txt)", QMessageBox.Critical, "Select metadata")
+                    "Select Valid Metadatafile (.txt)", QMessageBox.Icon.Critical, "Select metadata")
                 load_metadata_win.show()
                 load_metadata_win.exec()
                 # When meta data is loaded using the loaded data,
@@ -422,7 +422,7 @@ class MainGUI(QWidget, external_windows):
                 wino.exec()
             except Exception as e:
                 errortext = "Could not run organoid segmentation: " + str(e)
-                alert = self.buildErrorWindow(errortext, QMessageBox.Critical, "Run error")
+                alert = self.buildErrorWindow(errortext, QMessageBox.Icon.Critical, "Run error")
                 alert.exec()
 
         # Menu item actions
@@ -504,7 +504,7 @@ class MainGUI(QWidget, external_windows):
         analysisparam.setFixedWidth(imageparam.minimumWidth())
 
         # Phind button
-        layout.addWidget(phind, 3, 0, Qt.AlignCenter)
+        layout.addWidget(phind, 3, 0, Qt.AlignmentFlag.AlignCenter)
 
         # initialize image plot and layout
         imgwindow = QGroupBox()
@@ -628,7 +628,7 @@ class MainGUI(QWidget, external_windows):
             #get size of current stack
             stack_size=data[data["ImageID"] == img_id]["Channel_1"].size
             if stack_size==0:
-                imgID_win = self.buildErrorWindow("ImageID out of range", QMessageBox.Critical, "Image load error")
+                imgID_win = self.buildErrorWindow("ImageID out of range", QMessageBox.Icon.Critical, "Image load error")
                 imgID_win.show()
                 imgID_win.exec()
                 return(True)
@@ -721,18 +721,18 @@ class MainGUI(QWidget, external_windows):
                         if self.voxelGroups.action(savefile, self.training):
                             message = f'All Done!\n\nFeature File Results saved at:\n{savefile}'
                             alert = self.buildErrorWindow(
-                                message, QMessageBox.Information, "Notice")
+                                message, QMessageBox.Icon.Information, "Notice")
                             alert.exec()
             except Exception as e:
                 errorText = "Voxel Grouping Error. Phind Analysis Failed. " \
                     + "\n\nPython Error: {} \n\nNote:If error is about quantity ".format(e) \
                     + "or size try reducing values in Set Voxel Parameters (Categories, tile size)"
                 alert = self.buildErrorWindow(
-                    errorText, QMessageBox.Information, "Notice")
+                    errorText, QMessageBox.Icon.Information, "Notice")
                 alert.exec()
         else:
             alert = self.buildErrorWindow(
-                "Metadata File not found", QMessageBox.Information, "Notice")
+                "Metadata File not found", QMessageBox.Icon.Information, "Notice")
             alert.exec()
     # end phindButtonAction
 

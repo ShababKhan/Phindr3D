@@ -14,9 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from PyQt6.QtWidgets import *
+from PyQt6.QtGui import *
+from PyQt6.QtCore import *
 
 class paramWindow(QDialog):
     """Build a GUI window for setting voxel parameters."""
@@ -213,6 +213,6 @@ class paramWindow(QDialog):
         winlayout.addWidget(mainbox, 1, 0, 1, 2)
         winlayout.addWidget(reset, 2, 0, 1, 1)
         winlayout.addWidget(done, 2, 1, 1, 1)
-        winlayout.setAlignment(Qt.AlignLeft)
+        winlayout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.setLayout(winlayout)
     # end constructor

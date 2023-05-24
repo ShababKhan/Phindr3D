@@ -19,9 +19,9 @@ import json
 
 import numpy as np
 import pandas as pd
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from PyQt6.QtWidgets import *
+from PyQt6.QtGui import *
+from PyQt6.QtCore import *
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.backend_bases import MouseButton
@@ -67,11 +67,11 @@ class interactive_points():
         #info layout
         info_box = QVBoxLayout()
         file_info=QLabel("FileName:")
-        file_info.setAlignment(Qt.AlignTop)
+        file_info.setAlignment(Qt.AlignmentFlag.AlignTop)
         file_info.setStyleSheet("background-color: white")
         file_info.setWordWrap(True)
         ch_info=QLabel("Channels\n")
-        ch_info.setAlignment(Qt.AlignTop)
+        ch_info.setAlignment(Qt.AlignmentFlag.AlignTop)
         ch_info.setStyleSheet("background-color: white")
         file_info.setFixedWidth(200)
         file_info.setMinimumHeight(350)
@@ -107,7 +107,7 @@ class interactive_points():
         main_plot.axes.get_yaxis().set_visible(False)
 
         # adjustbar layout
-        adjustbar = QSlider(Qt.Vertical)
+        adjustbar = QSlider(Qt.Orientation.Vertical)
         adjustbar.setMinimum(0)
         adjustbar.setValue(0)
         adjustbar.setFixedWidth(50)
@@ -121,7 +121,7 @@ class interactive_points():
         grid.addLayout(info_box, 0, 0)
         grid.addWidget(main_plot, 0, 1)
         grid.addWidget(ch_colour, 1, 0)
-        grid.addWidget(pjt_box, 1, 1, Qt.AlignCenter)
+        grid.addWidget(pjt_box, 1, 1, Qt.AlignmentFlag.AlignCenter)
         grid.addWidget(adjustbar, 0, 2)
         self.win.setLayout(grid)
 
