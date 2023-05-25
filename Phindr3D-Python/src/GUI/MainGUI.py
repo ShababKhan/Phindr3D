@@ -33,6 +33,7 @@ try:
     from ..VoxelGroups.VoxelGroups import *
     from ..Clustering.Clustering import *
     from ..Training.Training import *
+    from .windows.platemapWindow import *
 except ImportError:
     from src.GUI.external_windows import *
     from src.GUI.windows.plot_functions import *
@@ -40,6 +41,7 @@ except ImportError:
     from src.VoxelGroups.VoxelGroups import *
     from src.Clustering.Clustering import *
     from src.Training.Training import *
+    from src.GUI.windows.platemapWindow import *
 
 # Define a random number generator with the global name Generator
 Generator = Generator()
@@ -73,16 +75,17 @@ class MainGUI(QWidget, external_windows):
         #Default color values for image plot
         keys, values = zip(*mcolors.CSS4_COLORS.items())
         values=[values[x] for x, y in enumerate(keys) if 'white' not in y]
-        self.color = [(0, 0.45, 0.74), (0.85, 0.33, 0.1), (0.93, 0.69, 0.13)]
+        self.color = [(0, 0.45, 0.74), (0.85, 0.33, 0.1), (0.93, 0.69, 0.13)]  # default channel colors.
         self.ch_len=1
         layout = QGridLayout()
-        layout.setAlignment(Qt.AlignmentFlag.AlignBottom)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
         # All widgets initialized here, to be placed in their proper section of GUI
         loadmeta = QPushButton("Load MetaData")
         setvoxel = QPushButton("Set Voxel Parameters")
         sv = QCheckBox("SV")
         mv = QCheckBox("MV")
-        adjust_thresh = QLabel("Adjust Image Threshold")
+        adjust_thresh = QLabel("Adjust Image Threshold")  # inert - just for visualization in main GUI window.
         threshbar = QSlider(Qt.Orientation.Horizontal)
         threshbar.setMaximum(100)
         setcolors = QPushButton("Set Channel Colors")
@@ -203,7 +206,7 @@ class MainGUI(QWidget, external_windows):
             """
             if not self.metadata.GetMetadataFilename():
                 alert = self.buildErrorWindow(
-                    "Metadata not found!!", QMessageBox.Icon.Critical, "Metadata not found")
+                    "Metadata not found!", QMessageBox.Icon.Critical, "Metadata not found")
                 alert.exec()
             elif buttonPressed == "Set Voxel Parameters":
                 try:
@@ -393,14 +396,20 @@ class MainGUI(QWidget, external_windows):
         metadata = menubar.addMenu("Metadata")
         createmetadata = metadata.addAction("Create Metadatafile")
         loadmetadata = metadata.addAction("Load Metadata")
+        loadPlateMap = metadata.addAction("Load Plate Map")
 
         imagetab = menubar.addMenu("Image")
         imagetabnext = imagetab.addAction("Next Image")
         imagetabcolors = imagetab.addAction("Set Channel Colors")
 
-        viewresults = menubar.addAction("View Results")
-        segmentation = menubar.addAction("Organoid Segmentation App")
-        about = menubar.addAction("About")
+        view = menubar.addMenu("View")
+        viewresults = view.addAction("Phindr3D Results")
+        
+        organoid = menubar.addMenu("Organoids")
+        segmentation = organoid.addAction("Organoid Segmentation App")
+
+        helpOpt = menubar.addMenu("Help")
+        about = helpOpt.addAction("About")
 
         def extractMetadata():
             """Act on user clicking Create Metadatafile menu item."""
@@ -424,6 +433,36 @@ class MainGUI(QWidget, external_windows):
                 errortext = "Could not run organoid segmentation: " + str(e)
                 alert = self.buildErrorWindow(errortext, QMessageBox.Icon.Critical, "Run error")
                 alert.exec()
+        
+        def readPlateMap():
+            """Act on user clicking Load Plate Map menu item."""
+            try:
+                # get filename
+                filename=''
+                filename, dump = QFileDialog.getOpenFileName(
+                    self, 'Open Plate Map File (CSV)', '', 'CSV files (*.csv)')
+                if filename != '':
+                    try:
+                        df = pd.read_csv(filename, header=0)
+                        df.set_index(df.columns[0], inplace=True)
+                    except Exception as ex:
+                        errortext = "Could not load plate map: "
+                        alert = self.buildErrorWindow(errortext, QMessageBox.Icon.Critical, "Load error")
+                        alert.exec()
+                view = QTableView()
+                view.resize(800, 500)
+                view.horizontalHeader().setStretchLastSection(True)
+                view.setAlternatingRowColors(True)
+                view.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
+                model = PandasModel(df)
+                view.setModel(model)
+                view.setWindowTitle("Plate Map - 384 Well")
+                view.show()
+                view.exec()
+            except Exception as e:
+                errortext = "Could not load plate map: " + str(e)
+                alert = self.buildErrorWindow(errortext, QMessageBox.Icon.Critical, "Load error")
+                alert.exec()
 
         # Menu item actions
         expsessions.triggered.connect(
@@ -442,6 +481,7 @@ class MainGUI(QWidget, external_windows):
         imagetabcolors.triggered.connect(metadataError)
         about.triggered.connect(self.aboutAlert)
         segmentation.triggered.connect(organoidSegmentation)
+        loadPlateMap.triggered.connect(lambda: readPlateMap())
         loadmetadata.triggered.connect(
             lambda: loadMetadata(
                 self, sv, mv, threshbar, slicescrollbar, img_plot,
@@ -510,7 +550,7 @@ class MainGUI(QWidget, external_windows):
         imgwindow = QGroupBox()
         imgwindow.setFlat(True)
 
-        matplotlib.use('Qt5Agg')
+        matplotlib.use('qtagg')
 
         img_plot = MplCanvas(self, width=10, height=10,
             dpi=300, projection="2d") #inches=pixel*0.0104166667
@@ -755,4 +795,6 @@ class MainGUI(QWidget, external_windows):
         """Respond to the user selecting Exit from the menu."""
         for window in QApplication.topLevelWidgets():
             window.close()
+
+        
 # end class MainGUI

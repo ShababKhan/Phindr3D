@@ -165,7 +165,7 @@ function setVoxelParam_Callback(hObject, eventdata, handles)
 
 tf = isappdata(handles.phindrMain,'imageID');
 if(~tf)
-    errordlg('Metadata not found!!');
+    errordlg('Metadata not found!');
     return;
 end
 
@@ -214,7 +214,7 @@ function extractFeatures_Callback(hObject, eventdata, handles)
 
 tf = isappdata(handles.phindrMain,'imageID');
 if(~tf)
-    errordlg('Metadata not found!!');
+    errordlg('Metadata not found!');
     return;
 end
 [outputFileName,outputDir] = uiputfile('*.txt','Select Output File');
@@ -378,7 +378,7 @@ function setChannelColors_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 tf = isappdata(handles.phindrMain,'imageID');
 if(~tf)
-    errordlg('Metadata not found!!');
+    errordlg('Metadata not found!');
     return;
 end
 selectedSlice = floor(get(handles.sliceSlider,'Value'));
@@ -414,7 +414,7 @@ function showSVMV_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of showSVMV
 tf = isappdata(handles.phindrMain,'imageID');
 if(~tf)
-    errordlg('Metadata not found!!');
+    errordlg('Metadata not found!');
     return;
 end
 valueOfCheckBox = get(hObject,'Value');
@@ -450,7 +450,7 @@ function nextImage_Callback(hObject, eventdata, handles)
 selectedSlice=1;
 tf = isappdata(handles.phindrMain,'imageID');
 if(~tf)
-    errordlg('Metadata not found!!');
+    errordlg('Metadata not found!');
     return;
 end
 % v = set(handles.threshSlider,'Value',0);
@@ -486,7 +486,7 @@ function sliceSlider_Callback(hObject, eventdata, handles)
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 tf = isappdata(handles.phindrMain,'imageID');
 if(~tf)
-    errordlg('Metadata not found!!');
+    errordlg('Metadata not found!');
     return;
 end
 selectedSlice = floor(get(hObject,'Value'));
@@ -661,7 +661,7 @@ function showMV_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of showMV
 tf = isappdata(handles.phindrMain,'imageID');
 if(~tf)
-    errordlg('Metadata not found!!');
+    errordlg('Metadata not found!');
     return;
 end
 valueOfCheckBox = get(hObject,'Value');

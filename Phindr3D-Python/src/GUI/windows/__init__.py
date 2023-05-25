@@ -9,3 +9,4 @@ from .paramWindow import *
 from .regexWindow import *
 from .resultsWindow import *
 from .segmentationWindow import *
+from .platemapWindow import *

@@ -22,13 +22,13 @@ import pandas as pd
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
 from PyQt6.QtCore import *
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.backend_bases import MouseButton
 from matplotlib.figure import Figure
 from mpl_toolkits.mplot3d import proj3d
 import matplotlib
-matplotlib.use('Qt5Agg')
+matplotlib.use('qtagg')
 from more_itertools import locate
 import PIL.Image
 

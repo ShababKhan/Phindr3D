@@ -19,8 +19,8 @@ from PyQt6.QtGui import *
 from PyQt6.QtCore import *
 import numpy as np
 import matplotlib
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 import pandas as pd
 
 try:
@@ -127,7 +127,7 @@ class resultsWindow(QDialog):
         prevdata.clicked.connect(
             lambda: import_file(self, map_type, colordropdown, twod, threed))
         #setup Matplotlib
-        matplotlib.use('Qt5Agg')
+        matplotlib.use('qtagg')
         self.plot_data = []
         self.labels = []
         self.main_plot = MplCanvas(self, width=10, height=10, dpi=100, projection="3d")

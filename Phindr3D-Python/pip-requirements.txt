@@ -47,3 +47,4 @@ threadpoolctl>=3.1.0
 tifffile>=2022.8.12
 wheel>=0.37.1
 umap-learn
+openpyxl 

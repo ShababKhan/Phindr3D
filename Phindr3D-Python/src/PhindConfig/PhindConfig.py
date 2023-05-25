@@ -49,7 +49,7 @@ class PhindConfig:
     # Training parameters
     randTrainingSuperVoxel = 10000
     pixelsPerImage = 200
-    randTrainingFields = 5
+    randTrainingFields = 10
     # Visualization
     showBinCenters = False
     showImage = False

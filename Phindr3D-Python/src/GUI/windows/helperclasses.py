@@ -17,8 +17,8 @@
 """These classes are not windows, but help build other features in windows."""
 
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *

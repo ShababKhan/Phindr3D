@@ -1008,7 +1008,7 @@ class Clustering:
                 tmp = np.arange(0, i)
                 tmpi = np.nonzero(np.isfinite(netsim[:i]))
                 # replace matplotlib
-                matplotlib.use('Qt5Agg')
+                matplotlib.use('qtagg')
                 winc = clusterdisplay(tmp[tmpi], netsim[tmpi], None, None, 'apcluster', '# iterations',
                                       'Fitness (net similarity) of quantized intermediate solution', None, None, 0)
         # identify exemplars
@@ -1236,7 +1236,7 @@ class Clustering:
             optText = f'Estimated Optimal Cluster -- {yp}'
 
             # matplotlib
-            matplotlib.use('Qt5Agg')
+            matplotlib.use('qtagg')
             winc = clusterdisplay(x, y, xp, yp, 'Cluster Estimation', 'Preference',
                                   '# Clusters', 'Optimal Cluster', [xCent, yCent, optText], 1)
         return yp

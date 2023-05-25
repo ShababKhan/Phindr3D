@@ -15,6 +15,7 @@
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
 from .windows import *
+from .windows import platemapWindow
 
 class external_windows():
     """Abstract class inherited by MainGUI with build methods for other windows."""
