@@ -14,9 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
-import imageio.v2 as io
+#import imageio.v2 as io
 import matplotlib.pyplot as plt
 import mahotas as mt
+import cv2 
 
 try:
     from .VoxelFunctions import *
@@ -128,7 +129,7 @@ class VoxelBase:
                     imFileName = theChannel.channelpath
                 except (IndexError, AttributeError):
                     return errorVal
-                IM = io.imread(imFileName)
+                IM = cv2.imread(imFileName, cv2.IMREAD_UNCHANGED)    #io.imread(imFileName)
                 try:
                     if intensityNormPerTreatment:
                         croppedIM[:, :, jChan] = dfunc.rescaleIntensity(IM,

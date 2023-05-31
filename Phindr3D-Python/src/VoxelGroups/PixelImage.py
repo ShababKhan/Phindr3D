@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
-import skimage.io as io
+import cv2
 
 try:
     from .VoxelBase import *
@@ -76,12 +76,12 @@ class PixelImage(VoxelBase):
                 if metadata.intensityNormPerTreatment:
                     img = image.stackLayers[zplane].channels[jChan + 1].channelpath
                     croppedIM[:, :, jChan] = DataFunctions.rescaleIntensity(
-                        io.imread(img, '.tif'), low=metadata.lowerbound[grpVal][jChan],
+                        cv2.imread(img, cv2.IMREAD_UNCHANGED), low=metadata.lowerbound[grpVal][jChan],
                         high=metadata.upperbound[grpVal][jChan])  # add params later
                 else:
                     img = image.stackLayers[zplane].channels[jChan + 1].channelpath
                     croppedIM[:, :, jChan] = DataFunctions.rescaleIntensity(
-                        io.imread(img, '.tif'), low=metadata.lowerbound[jChan],
+                        cv2.imread(img, cv2.IMREAD_UNCHANGED), low=metadata.lowerbound[jChan],
                         high=metadata.upperbound[jChan]) # add params later
             xEnd = -tileinfo.xOffsetEnd
             if xEnd == -0:

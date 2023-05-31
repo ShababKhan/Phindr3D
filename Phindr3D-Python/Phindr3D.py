@@ -15,6 +15,8 @@
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
 from os import path
+import cProfile
+import pstats
 
 from src import *
 
@@ -31,5 +33,21 @@ if __name__ == '__main__':
         path.join(path.dirname(__file__), 'phindr3d_icon.png'))
     # Start the GUI defined in src/GUI/MainGUI.py
     run_mainGUI(iconFile)
+
+
+
+
+
+
+
+#    with cProfile.Profile() as pr:
+#        run_mainGUI(iconFile) 
+#
+#    stats = pstats.Stats(pr)
+#    stats.sort_stats(pstats.SortKey.TIME)
+#    # Now you have two options, either print the data or save it as a file
+#    stats.print_stats() # Print The Stats
+#    stats.dump_stats("phindrstats7.prof") # Saves the data in a file, can me used to see the data visually
+
 
 # end main

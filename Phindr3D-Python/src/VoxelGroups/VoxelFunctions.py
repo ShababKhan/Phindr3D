@@ -54,9 +54,9 @@ class VoxelFunctions:
                 randpermX = np.array([x[j] for j in Generator.Generator.choice(
                     m, size=samSize, replace=False, shuffle=False)])
                 # max_iter used to be 100. changed because bin-centers don't always match up to real values.
-                kmeans = cluster.KMeans(
-                    n_clusters=numBins, init='k-means++', n_init=100,
-                    max_iter=100, random_state=random_state).fit(randpermX)
+                kmeans = cluster.MiniBatchKMeans(
+                    n_clusters=numBins, init='k-means++', n_init='auto',
+                    max_iter=250, random_state=random_state).fit(randpermX)
                 binCenters[:, :, iRandCycle] = kmeans.cluster_centers_
                 temp1 = np.add(
                     np.array([dfunc.mat_dot(
@@ -69,8 +69,8 @@ class VoxelFunctions:
             minDis = np.argmin(sumD)
             binCenters = binCenters[:, :, minDis]
         else:
-            kmeans = cluster.KMeans(
-                n_clusters=numBins, init='k-means++', n_init=100, max_iter=100,
+            kmeans = cluster.MiniBatchKMeans(
+                n_clusters=numBins, init='k-means++', n_init='auto', max_iter=250,
                 random_state=random_state).fit(x)  # max iter used to be 100
             binCenters = kmeans.cluster_centers_
         return np.abs(binCenters)
