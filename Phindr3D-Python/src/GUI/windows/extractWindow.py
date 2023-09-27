@@ -125,8 +125,8 @@ class extractWindow(QDialog):
                 alert = QMessageBox()
                 try:
                     if outputname != "":
-                        if not outputname.endswith(".txt"):
-                            outputname = outputname + ".txt"
+                        if not outputname.endswith(".tsv"):
+                            outputname = outputname + ".tsv"
                         created = DataFunctions.createMetadata(imagedir, regex, outputname)
                     else:
                         created = DataFunctions.createMetadata(imagedir, regex)

@@ -42,6 +42,7 @@ class VoxelFunctions:
         """
         Generator = metadata.Generator
         m = x.shape[0]
+        maxkIter = 2500
         if m > 50000:
             samSize = 50000
         else:
@@ -56,7 +57,7 @@ class VoxelFunctions:
                 # max_iter used to be 100. changed because bin-centers don't always match up to real values.
                 kmeans = cluster.MiniBatchKMeans(
                     n_clusters=numBins, init='k-means++', n_init='auto',
-                    max_iter=250, random_state=random_state).fit(randpermX)
+                    max_iter=maxkIter, random_state=random_state).fit(randpermX)
                 binCenters[:, :, iRandCycle] = kmeans.cluster_centers_
                 temp1 = np.add(
                     np.array([dfunc.mat_dot(
@@ -70,7 +71,7 @@ class VoxelFunctions:
             binCenters = binCenters[:, :, minDis]
         else:
             kmeans = cluster.MiniBatchKMeans(
-                n_clusters=numBins, init='k-means++', n_init='auto', max_iter=250,
+                n_clusters=numBins, init='k-means++', n_init='auto', max_iter=maxkIter,
                 random_state=random_state).fit(x)  # max iter used to be 100
             binCenters = kmeans.cluster_centers_
         return np.abs(binCenters)

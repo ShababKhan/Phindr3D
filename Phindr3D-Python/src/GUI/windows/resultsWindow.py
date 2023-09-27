@@ -27,16 +27,19 @@ try:
     from .interactive_click import interactive_points
     from .plot_functions import *
     from ...Training import *
+    from .platemapWindow import *
 except ImportError:
     from src.GUI.windows.interactive_click import interactive_points
     from src.GUI.windows.plot_functions import *
+    from src.GUI.windows.platemapWindow import *
     from src.Training import *
 
 class resultsWindow(QDialog):
     """Build a GUI window for the user to analyze data and view plots."""
-    def __init__(self, color, metadata):
+    def __init__(self, color, metadata, platemap = None):
         """Construct the GUI window for users to analyze data and view plots."""
         super(resultsWindow, self).__init__()
+        self.platemap = platemap
         self.setWindowTitle("Results")
         self.feature_file=[]
         self.imageIDs=[]
@@ -61,7 +64,9 @@ class resultsWindow(QDialog):
         plotproperties = menubar.addMenu("Plot Properties")
         rotation_enable = plotproperties.addAction("3D Rotation Enable")
         rotation_disable = plotproperties.addAction("3D Rotation Disable")
+        pointSize = plotproperties.addAction("Point Size By ...")
         resetview = plotproperties.addAction("Reset Plot View")
+        selectData = data.addAction("Select Data")
 
         # defining widgets
         box = QGroupBox()
@@ -95,9 +100,7 @@ class resultsWindow(QDialog):
         inputfile.triggered.connect(
             lambda: self.loadFeaturefile(colordropdown, map_type.currentText(), True))
         selectclasses.triggered.connect(
-            lambda: TrainingFunctions().selectclasses(np.array(self.filtered_data), np.array(self.labels))
-                if len(self.plot_data)>0
-                else errorWindow("Error Dialog", "Please Select Feature File. No data is currently displayed"))
+            lambda: TrainingFunctions().selectclasses(self.feature_file[0], self.platemap))
         estimate.triggered.connect(
             lambda: Clustering.Clustering().cluster_est(self.filtered_data)
                 if len(self.plot_data) > 0
@@ -120,19 +123,26 @@ class resultsWindow(QDialog):
         rotation_enable.triggered.connect(lambda: self.main_plot.axes.mouse_init())
         rotation_disable.triggered.connect(lambda: self.main_plot.axes.disable_mouse_rotation())
         resetview.triggered.connect(lambda: reset_view(self))
+        pointSize.triggered.connect(lambda: self.pointSizeFeature())
         exportdata.clicked.connect(
             lambda: save_file(self, map_type.currentText())
                 if len(self.plot_data) > 0
                 else errorWindow("Error Dialog","Please Select Feature File. No data is currently displayed"))
         prevdata.clicked.connect(
             lambda: import_file(self, map_type, colordropdown, twod, threed))
+        selectData.triggered.connect(lambda: self.chooseDataSubset())
         #setup Matplotlib
         matplotlib.use('qtagg')
         self.plot_data = []
         self.labels = []
         self.main_plot = MplCanvas(self, width=10, height=10, dpi=100, projection="3d")
+
+        # get size of points
+        self.point_size = 10
+
+        # plot points
         sc_plot = self.main_plot.axes.scatter3D(
-            [], [], [], s=10, alpha=1, depthshade=False)  # , picker=True)
+            [], [], [], s=self.point_size, alpha=1, depthshade=False)  # , picker=True)
         self.main_plot.axes.set_position([-0.2, -0.05, 1, 1])
         self.original_xlim = sc_plot.axes.get_xlim3d()
         self.original_ylim = sc_plot.axes.get_ylim3d()
@@ -170,7 +180,7 @@ class resultsWindow(QDialog):
             lambda: check_projection("2d", map_type.currentText()) if twod.isChecked() else None)
         threed.toggled.connect(
             lambda: check_projection("3d", map_type.currentText()) if threed.isChecked() else None)
-        twod.setChecked(True)
+        threed.setChecked(True)
         picked_pt = interactive_points(
             self.main_plot, self.projection, self.plot_data, self.labels,
             self.feature_file, self.color, self.imageIDs)
@@ -200,7 +210,7 @@ class resultsWindow(QDialog):
         filename=''
         if new_plot:
             filename, dump = QFileDialog.getOpenFileName(
-                self, 'Open Feature File', '', 'Text files (*.txt)')
+                self, 'Open Feature File', '', 'Text files (*.txt *.tsv)')
         if filename != '' or (not isinstance(prevfile, type(None)) and os.path.exists(prevfile)):
             try:
                 self.feature_file.clear()
@@ -253,6 +263,62 @@ class resultsWindow(QDialog):
         grouping.blockSignals(False)
         return(grouping, win.x_press)
     # end color_groupings
+
+    def pointSizeFeature(self):
+        '''Opens a window to select a feature to determine point size'''
+        #read feature file
+        feature_data = pd.read_csv(self.feature_file[0], sep='\t', na_values='        NaN')
+        
+        # get column names for features
+        columns = feature_data.columns
+        # only columns that do not start with MV
+        columns = columns[columns.map(lambda col: not col.startswith('MV'))]
+        columns = ['Default: Constant Size'] + columns.tolist()
+        # prompt user to select a feature
+        feature, ok = QInputDialog.getItem(self, "Feature Selection", "Select a feature to determine point size:", columns, 0, False)
+
+        # if user selects a feature, return the feature name
+        if ok:
+            self.pointSize_feature = feature
+        else:
+            self.pointSize_feature = 'Default: Constant Size'
+
+        # update point size
+        self.updatePointSize()
+    # end pointSizeFeature
+
+    def updatePointSize(self):
+        '''Updates the point size based on the selected feature'''
+        # if the selected feature is not default, update the point size
+        if self.pointSize_feature != 'Default: Constant Size':
+            # get the feature data
+            feature_data = pd.read_csv(self.feature_file[0], sep='\t', na_values='        NaN')
+            # get the feature values
+            feature_values = feature_data[self.pointSize_feature].to_numpy().astype(np.float64)
+            # get the min and max values
+            min_val = np.min(feature_values)
+            max_val = np.max(feature_values)
+            # get the point size
+            self.point_size = 10 + 90 * (feature_values - min_val) / (max_val - min_val)
+        else:
+            self.point_size = 10
+
+        # update the point size
+        for plot in self.plots:
+            plot.set_sizes(self.point_size)
+
+        # update the plot
+        self.main_plot.draw()
+
+    def chooseDataSubset(self):
+        """Choose a subset of data to display."""
+        try:
+            view = platemapWindow(dataframe = self.platemap, meta = self.metadata, first = False)
+            view.show()
+            view.exec()
+        except:
+            pass
+
 
     def data_filt(self, grouping, projection, plot, new_plot):
         """Choose dataset to use for clustering.
@@ -326,4 +392,26 @@ class resultsWindow(QDialog):
             self.numcluster, self.filtered_data, self.plot_data, np.array(self.labels), group)
         self.numcluster = clustnum.clust
     # end setnumcluster
+
+    def classificationRF(self, mv):
+        """Open a platemap window for the user to select training classes, and pass to random forest model."""
+        featureFile = self.feature_file[0]
+        try:
+            view = platemapWindow(dataframe = self.platemap, meta = featureFile, first = False)
+            view.show()
+            view.exec()
+        except:
+            pass
+        mapOnlyFeature = pd.read_csv('/Users/work/Desktop/SplitImages/tmp.tsv', sep='\t')
+        classes = np.array(mapOnlyFeature['Type'].unique())
+        # samples are labelled as "SAMPLE".
+        mv = self.data_filt(classes, "3d", "PCA", False)
+        X_train, y_train, X_test, y_test= TrainingFunctions().partition_data(mv, lbls, select_grps)
+        class_tbl=TrainingFunctions().random_forest_model(X_train, y_train, X_test, lbls[y_test])
+        #export classification table
+        name = QFileDialog.getSaveFileName(None, 'Save File', filter=".txt")
+        if name[0]!= '':
+            class_tbl.to_csv("".join(name), sep='\t', mode='w')
+
+
 # end resultsWindow

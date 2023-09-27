@@ -25,6 +25,8 @@ import PIL.Image
 from scipy.stats.mstats import mquantiles
 import pickle
 from PyQt6 import QtGui
+from PyQt6.QtGui import *
+
 
 try:
     from .external_windows import *
@@ -69,6 +71,7 @@ class MainGUI(QWidget, external_windows):
         self.training = Training()
         self.metadata = Metadata(Generator)
         self.voxelGroups = VoxelGroups(self.metadata)
+        self.platemap = None   # come back here...
         self.setWindowTitle("Phindr3D")
         self.rgb_img=0
         self.img_ind=1
@@ -306,7 +309,7 @@ class MainGUI(QWidget, external_windows):
                 windows are displayed for several exception types.
             """
             filename, dump = QFileDialog.getOpenFileName(
-                self, 'Open File', '', 'Text files (*.txt)')
+                self, 'Open File', '', 'Text files (*.tsv)')
             if os.path.exists(filename):
                 # When meta data is loaded, using the loaded data,
                 # change the data for image viewing
@@ -363,7 +366,7 @@ class MainGUI(QWidget, external_windows):
                     return
             else:
                 load_metadata_win = self.buildErrorWindow(
-                    "Select Valid Metadatafile (.txt)", QMessageBox.Icon.Critical, "Select metadata")
+                    "Select Valid Metadatafile (.tsv)", QMessageBox.Icon.Critical, "Select metadata")
                 load_metadata_win.show()
                 load_metadata_win.exec()
                 # When meta data is loaded using the loaded data,
@@ -419,7 +422,7 @@ class MainGUI(QWidget, external_windows):
 
         def viewResults():
             """Act on user clicking View Results menu item."""
-            winc = self.buildResultsWindow(self.color, metadata)
+            winc = self.buildResultsWindow(self.color, metadata = self.metadata, platemap = self.platemap)
             winc.show()
             winc.exec()
 
@@ -440,30 +443,24 @@ class MainGUI(QWidget, external_windows):
                 # get filename
                 filename=''
                 filename, dump = QFileDialog.getOpenFileName(
-                    self, 'Open Plate Map File (CSV)', '', 'CSV files (*.csv)')
+                    self, 'Open Plate Map File (Excel)', '', 'XLSX files (*.xlsx)')
                 if filename != '':
                     try:
-                        df = pd.read_csv(filename, header=0)
-                        df.set_index(df.columns[0], inplace=True)
+                        df = pd.read_excel(filename, sheet_name=None)
+                        self.platemap = df
+                        view = platemapWindow(dataframe = df, meta = self.metadata)
+                        # create a copy of the view
+                        view.show()
+                        view.exec()
                     except Exception as ex:
-                        errortext = "Could not load plate map: "
+                        errortext = "Could not load plate map. Have you loaded the metadata file? " + str(ex)
                         alert = self.buildErrorWindow(errortext, QMessageBox.Icon.Critical, "Load error")
                         alert.exec()
-                view = QTableView()
-                view.resize(800, 500)
-                view.horizontalHeader().setStretchLastSection(True)
-                view.setAlternatingRowColors(True)
-                view.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
-                model = PandasModel(df)
-                view.setModel(model)
-                view.setWindowTitle("Plate Map - 384 Well")
-                view.show()
-                view.exec()
             except Exception as e:
-                errortext = "Could not load plate map: " + str(e)
-                alert = self.buildErrorWindow(errortext, QMessageBox.Icon.Critical, "Load error")
+                loaded = "Error loading plate map:    " + str(e)
+                alert = self.buildErrorWindow(loaded, QMessageBox.Icon.Information, "Load error")
                 alert.exec()
-
+            
         # Menu item actions
         expsessions.triggered.connect(
             lambda: export_session()
@@ -753,7 +750,7 @@ class MainGUI(QWidget, external_windows):
         if self.metadata.GetMetadataFilename():
             #get output dir:
             savefile, dump = QFileDialog.getSaveFileName(
-                self, 'Phindr3D Results', '', 'Text file (*.txt)')
+                self, 'Phindr3D Results', '', 'Text file (*.tsv)')
             self.training.randFieldID = self.metadata.trainingSet
             try:
                 if len(savefile) > 0:

@@ -14,12 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 import numpy as np
 import pandas as pd
 
 from ..GUI.windows.helperclasses import *
+from ..GUI.windows.platemapWindow import *
 
 class TrainingFunctions:
     """Static methods for training.
@@ -61,33 +63,53 @@ class TrainingFunctions:
         return(class_table)
     # end random_forest_model
 
-    def selectclasses(self, mv, lbls):
-        """Open a window for the user to select training classes, and pass to random forest model."""
-        select_grps=[]
-        if len(np.unique(lbls))>1:
-            win=selectWindow(np.unique(lbls), "", "Select Controls", "Classes", "", select_grps)
-            if win.x_press:
-                pass #print("Cancelled")
-            elif len(select_grps)>1:
-                pts=[len(np.array(np.where(lbls==grp)[0], dtype=int)) for grp in select_grps]
-                if min(pts)>1:
-                    X_train, y_train, X_test, y_test= self.partition_data(mv, lbls, select_grps)
-                    class_tbl=self.random_forest_model(X_train, y_train, X_test, lbls[y_test])
-                    #export classification table
-                    name = QFileDialog.getSaveFileName(None, 'Save File', filter=".txt")
-                    if name[0]!= '':
-                        class_tbl.to_csv("".join(name), sep='\t', mode='w')
-                else:
-                    grp_check=np.array(select_grps)
-                    grp_check=grp_check[np.where(np.array(pts) < 2)[0]]
-                    errorWindow("Select Classes",
-                        "There are classes with less than 2 data points. Classes with less than 2 data points '{}'".format(grp_check))
-            else:
-                errorWindow("Select Classes",
-                    "Must select at least two classes. Selected Class '{}'".format(select_grps))
-        else:
-            errorWindow("Select Classes",
-                "Must have at least two classes. Choose 'Color by' option that has more than 1 class label. Only has one class label {}".format(np.unique(lbls)))
+    def selectclasses(self, featureDF, platemap):
+        """Open platemapWindow's data selection to select training classes, and pass to random forest model."""
+        '''Remember: X = self.filtered_data. Now, partition_data takes in mv data as np.array, not pd.DataFrame.
+        So, we need to convert self.filtered_data to np.array - taking just the columns that are of the format "MV#". 
+        We can do this using df.columns.str.contains("MV") to get the columns that contain "MV" in their name. Labels 
+        are just the titles of the treatment classes (i.e. what we named them) of all rows while select_grps are the 
+        treatments selected as training classes.
+        '''
+
+        try:
+            featureDF = pd.read_csv(featureDF, sep='\t')
+            try:
+                view = platemapWindow(dataframe = platemap, meta = featureDF, first = False)
+                view.show()
+                view.exec()
+            except:
+                print("Error in opening platemapWindow")
+                pass
+            mv = pd.read_csv('tmp1.tsv', sep='\t',  na_values='        NaN')
+            # delete tmp1.tsv
+            os.remove('tmp1.tsv')
+            # drop rows with NaN values.
+            mv = mv.fillna(0)
+            lbls = mv.iloc[:, -1]
+            select_grps = lbls[~lbls.str.contains("_SAMPLE")]
+            mv = mv.loc[:, mv.columns.str.contains("MV")]
+            mv = mv.loc[:, ~mv.columns.str.contains("NumMV")]
+            mv = mv.to_numpy()
+            lbls = lbls.to_numpy()
+            select_grps = select_grps.to_numpy()
+            select_grps = np.unique(select_grps)
+
+            X_train, y_train, X_test, y_test= self.partition_data(mv, lbls, select_grps)
+            class_tbl=self.random_forest_model(X_train, y_train, X_test, lbls[y_test])
+
+            # get column names from class_tbl and add a column for each column name as "<name_percentage>"
+            class_colnames = class_tbl.columns
+            for col in class_colnames:
+                class_tbl[col + "_percentage"] = 100 * class_tbl[col] / class_tbl[class_colnames].sum(axis=1)
+
+            #export classification table
+            name = QFileDialog.getSaveFileName(None, 'Save File', filter=".csv")
+            if name[0]!= '':
+                class_tbl.to_csv("".join(name), sep=',', mode='w')
+            #except: # print error message
+        except Exception as e:
+            print(e)
     # end selectclasses
 # end TrainingFunctions
 

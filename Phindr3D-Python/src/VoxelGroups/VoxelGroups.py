@@ -177,8 +177,8 @@ class VoxelGroups():
                 dictResults[name] = textureResults[:, i]
         df = pd.DataFrame(dictResults)
         csv_name = outputFileName
-        if csv_name[-4:] != '.txt':
-            csv_name = csv_name + '.txt'
+        if csv_name[-4:] != '.tsv':
+            csv_name = csv_name + '.tsv'
         df.to_csv(csv_name, index=None, sep='\t')
         #return param, resultIM, resultRaw, df #, metaIndexTmp
         # Missing a first parameter from the return list
@@ -194,7 +194,7 @@ if __name__ == '__main__':
     import pandas as pd
     import os
     deterministic = Generator(1234)
-    metadatafile = 'testdata/metadata_tests/metadatatest_metadata.txt'
+    metadatafile = 'testdata/metadata_tests/metadatatest_metadata.tsv'
     test = Metadata(deterministic)
     if test.loadMetadataFile(metadatafile):
         print("So, did the metadata load? " + "Yes!" if test.metadataLoadSuccess else "No.")

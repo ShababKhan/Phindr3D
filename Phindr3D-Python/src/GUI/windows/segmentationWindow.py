@@ -196,7 +196,7 @@ class segmentationWindow(QDialog):
         
         def loadMetadata(self, loadbutton):
             """Select and load metadata for images to be segmented."""
-            filename, dump = QFileDialog.getOpenFileName(self, 'Select Metadata File', '', 'Text files (*.txt)')
+            filename, dump = QFileDialog.getOpenFileName(self, 'Select Metadata File', '', 'Text files (*.tsv)')
             if os.path.exists(filename):
                 try:
                     self.metadata.loadMetadataFile(filename)
@@ -216,7 +216,7 @@ class segmentationWindow(QDialog):
                     alert.exec()
             else:
                 load_metadata_win = self.buildErrorWindow(
-                    "Select Valid Metadata File (.txt)", QMessageBox.Icon.Critical, "Select valid file")
+                    "Select Valid Metadata File (.tsv)", QMessageBox.Icon.Critical, "Select valid file")
                 load_metadata_win.show()
                 load_metadata_win.exec()
         # End loadMetadata

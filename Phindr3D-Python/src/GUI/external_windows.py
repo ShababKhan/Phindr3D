@@ -23,9 +23,9 @@ class external_windows():
         """Create an instance of class extractWindow."""
         return extractWindow()
 
-    def buildResultsWindow(self, color, metadata):
+    def buildResultsWindow(self, color, metadata = None, platemap = None):
         """Create an instance of class resultsWindow."""
-        return resultsWindow(color, metadata)
+        return resultsWindow(color, metadata, platemap)
 
     def buildParamWindow(
             self, metaheader, supercoords, svcategories, megacoords,

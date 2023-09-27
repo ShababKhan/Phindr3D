@@ -89,7 +89,7 @@ class colorchannelWindow(object):
                 break
         curcolor = (np.array(self.tmp_color[btn_num]) * 255).astype(int)
         wincolor.setCurrentColor(QColor.fromRgb(curcolor[0], curcolor[1], curcolor[2]))
-        wincolor.exec_()
+        wincolor.exec()
         rgb_color = wincolor.selectedColor()
         if rgb_color.isValid():
             self.btn[btn_num].setStyleSheet('background-color: rgb' +str(rgb_color.getRgb()[:-1]) +';')

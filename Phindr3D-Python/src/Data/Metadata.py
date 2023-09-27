@@ -726,7 +726,7 @@ if __name__ == '__main__':
     deterministic = Generator(1234)
     rng = Generator()
 
-    metadatafile = 'testdata/metadata_tests/metadatatest_metadata.txt'
+    metadatafile = 'testdata/metadata_tests/metadatatest_metadata.tsv'
 
     test = Metadata(deterministic)
     try:

@@ -95,7 +95,7 @@ class DataFunctions:
     # end regexPatternCompatibility
 
     @staticmethod
-    def createMetadata(folder_path, regex, mdatafilename='metadata_python.txt'):
+    def createMetadata(folder_path, regex, mdatafilename='metadata_python.tsv'):
         """Create a metadata txt file in the same format as used in the matlab Phindr implementation.
 
         folder_path: path to image folder (full or relative)
