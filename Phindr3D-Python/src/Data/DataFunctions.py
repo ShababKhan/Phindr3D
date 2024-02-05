@@ -273,6 +273,7 @@ class DataFunctions:
                             den1 * den2)  # i hope this is the right mix of matrix multiplication and element-wise stuff.
         imThreshold = np.argmax(covarMat)  # index makes sense here.
         imThreshold = binCenters[imThreshold] + meanIntensity
+        
         return imThreshold
     # end getImageThreshold
 

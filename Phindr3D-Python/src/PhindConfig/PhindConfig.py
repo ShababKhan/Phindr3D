@@ -24,7 +24,7 @@ class PhindConfig:
     """
 
     @staticmethod
-    def random_cmap(map_len=40, black_background=True):
+    def random_cmap(map_len=256, black_background=True):
         """This static method creates a random color map, useful in segmentation maps.
 
         :param map_len: optional. length of color map. default is 256.

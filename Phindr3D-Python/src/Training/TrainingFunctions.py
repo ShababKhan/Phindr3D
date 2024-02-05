@@ -63,7 +63,7 @@ class TrainingFunctions:
         return(class_table)
     # end random_forest_model
 
-    def selectclasses(self, featureDF, platemap):
+    def selectClassesDF(self, featureDF, platemap):
         """Open platemapWindow's data selection to select training classes, and pass to random forest model."""
         '''Remember: X = self.filtered_data. Now, partition_data takes in mv data as np.array, not pd.DataFrame.
         So, we need to convert self.filtered_data to np.array - taking just the columns that are of the format "MV#". 
@@ -74,6 +74,7 @@ class TrainingFunctions:
 
         try:
             featureDF = pd.read_csv(featureDF, sep='\t')
+            print(featureDF)
             try:
                 view = platemapWindow(dataframe = platemap, meta = featureDF, first = False)
                 view.show()

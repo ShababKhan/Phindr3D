@@ -116,16 +116,22 @@ class platemapWindow(QDialog):
             self.classesDict = {}
             self.samplesDict = {}
             self.selectedDataframe = None
-            # if dataframe is a dictionary, then we have multiple dataframes to display in tabs
-            metapd = meta.copy()
-            #metapd = pd.read_csv('/Users/work/Desktop/SplitImages/phindfeature.tsv', sep="\t")
-            dataframe = pd.read_excel('/Users/work/Desktop/SplitImages/platemap_sample.xlsx', sheet_name = None)
 
+            metapd = pd.read_csv(meta, sep="\t", na_values='        NaN')   # this time the meta is a file path.
+
+            #dataframe = pd.read_excel('/Users/work/Desktop/SplitImages/platemap_sample.xlsx', sheet_name = None)
+            # if dataframe (i.e. platemap) is none, print error message and return
+            
+            if dataframe is None:
+                print('Error: PLATEMAP is None. Please load a platemap in the previous window.')
+                return
+            
+            # if dataframe is a dictionary, then we have multiple dataframes to display in tabs
             if type(dataframe) == dict:    # i.e. if Excel file is passed...
                 tables = []
                 for i in dataframe.keys(): # each key is a sheet name in the xlsx file.
                     tabwidget = QTabWidget()
-                    df = dataframe[i]  #.set_index(dataframe[i].columns[0])
+                    df = dataframe[i].set_index(dataframe[i].columns[0])
                     # replace all nan with empty string
                     df = df.replace(np.nan, '', regex=True)
                     metapd[i] = metapd.apply(lambda x: df.iloc[int(x['Row']) - 1, int(x['Column']) - 1], axis = 1)
@@ -181,6 +187,7 @@ class platemapWindow(QDialog):
             selectionButtonsBox.addLayout(displayBox)
 
             submit_button = QPushButton('Submit')
+            submit_button.clicked.connect(self.submit)
 
             mainLayout.addLayout(tableBox, 0, 0, alignment=QtCore.Qt.AlignmentFlag.AlignTop)
             mainLayout.addLayout(selectionButtonsBox, 0, 1, alignment=QtCore.Qt.AlignmentFlag.AlignTop)
@@ -203,6 +210,7 @@ class platemapWindow(QDialog):
             self.close()
 
         except:
+            print("Error at updateMetadata")
             pass
     
     def syncSelection(self):
@@ -224,6 +232,7 @@ class platemapWindow(QDialog):
                     for range in ranges:
                         table.setRangeSelected(range, True)
         except:
+            print("Error at syncSelection")
             pass
 
     def clearSelection(self):
@@ -231,6 +240,7 @@ class platemapWindow(QDialog):
             for table in self.tables:
                 table.clearSelection()
         except:
+            print("Error at clearSelection")
             pass
     
     def addClass(self):
@@ -253,10 +263,12 @@ class platemapWindow(QDialog):
             index2 = []
             for i in range(len(index)):
                 row = index[i].row()
+                row = int(row) + 1
                 col = index[i].column()
+                col = int(col) + 1
                 index2.append([row, col])
 
-            # add the [row, col] to the classDict
+            # append the [row, col] to the classDict
             name = self.labelInput.text()
             self.classesDict[name] = index2
 
@@ -277,6 +289,7 @@ class platemapWindow(QDialog):
                         else:
                             self.selectedDataframe = pd.concat([self.selectedDataframe, rows])
                     except:
+                        print("Error at addClass")
                         pass
 
             for table in self.tables:
@@ -288,9 +301,10 @@ class platemapWindow(QDialog):
                 table.clearSelection()
             # clear the input box
             self.labelInput.clear()
-            self.selectedDataframe.to_csv('tmp1.tsv', sep = '\t', index = False)
+            # self.selectedDataframe.to_csv('tmp1.tsv', sep = '\t', index = False)
 
         except:
+            print("Error at addClass")
             pass
 
     def addSample(self):
@@ -313,7 +327,9 @@ class platemapWindow(QDialog):
             index2 = []
             for i in range(len(index)):
                 row = index[i].row()
+                row = int(row) + 1
                 col = index[i].column()
+                col = int(col) + 1
                 index2.append([row, col])
 
             # add the [row, col] to the classDict
@@ -337,18 +353,25 @@ class platemapWindow(QDialog):
                         else:
                             self.selectedDataframe = pd.concat([self.selectedDataframe, rows])
                     except:
+                        print("Error at addSample")
                         pass
-
+            
+            # clear the selections
             for table in self.tables:
                 table.clearSelection()
-            # clear the input box
-            self.labelInput.clear()
 
-            for table in self.tables:
-                table.clearSelection()
             # clear the input box
             self.labelInput.clear()
-            self.selectedDataframe.to_csv('tmp1.tsv', sep = '\t', index = False)
+            #self.selectedDataframe.to_csv('tmp1.tsv', sep = '\t', index = False)
 
         except:
+            print("Error at addSample")
             pass
+    
+    # a function for the submit button
+    def submit(self):
+        # get cwd, save the selectedDataframe to a file in cwd as tmp.tsv, and return the selectedDataframe path.
+        cwd = os.getcwd()
+        # path = cwd + '/tmp.tsv'
+        self.selectedDataframe.to_csv(cwd + '/tmp-selectedClassSample.tsv', sep = '\t', index = False)
+        self.close()

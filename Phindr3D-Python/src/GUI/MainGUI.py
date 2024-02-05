@@ -91,6 +91,10 @@ class MainGUI(QWidget, external_windows):
         adjust_thresh = QLabel("Adjust Image Threshold")  # inert - just for visualization in main GUI window.
         threshbar = QSlider(Qt.Orientation.Horizontal)
         threshbar.setMaximum(100)
+        # add tick marks to threshbar
+        threshbar.setTickPosition(QSlider.TickPosition.TicksBelow)
+        threshbar.setTickInterval(10)
+        
         setcolors = QPushButton("Set Channel Colors")
         slicescroll = QLabel("Slice Scroller")
         slicescrollbar = QSlider(Qt.Orientation.Horizontal)
@@ -154,7 +158,8 @@ class MainGUI(QWidget, external_windows):
                                 self.bounds = data.get('bounds')[0]
                                 self.thresh = data.get('threshold')[0]
                             else:
-                                self.metadata.computeImageParameters()
+                                threshbar_value = threshbar.value()
+                                self.metadata.computeImageParameters(sliderValue=threshbar_value/100)
                                 self.thresh = self.metadata.intensityThresholdValues
                                 self.bounds = [self.metadata.lowerbound, self.metadata.upperbound]
                     self.voxelGroups = VoxelGroups(self.metadata)
@@ -261,7 +266,9 @@ class MainGUI(QWidget, external_windows):
                         self.metadata.treatmentColNameForNormalization = winp.normintensitycol
                         # after updating parameters
                         self.voxelGroups.updateImages()
-                        self.metadata.computeImageParameters()
+                        # first, get the threshbar value
+                        threshbar_value = threshbar.value()
+                        self.metadata.computeImageParameters(sliderValue=threshbar_value/100)
                         self.thresh = self.metadata.intensityThresholdValues
                         self.bounds = [self.metadata.lowerbound, self.metadata.upperbound]
                         threshbar.blockSignals(True)
@@ -328,7 +335,8 @@ class MainGUI(QWidget, external_windows):
                     self.img_ind=1
                     imagenav.setText("1")
                     #compute image bounds/threshold
-                    self.metadata.computeImageParameters()
+                    threshbar_value = threshbar.value()
+                    self.metadata.computeImageParameters(sliderValue=threshbar_value/100)
                     self.thresh=self.metadata.intensityThresholdValues
                     self.bounds=[self.metadata.lowerbound, self.metadata.upperbound]
                     threshbar.setValue(

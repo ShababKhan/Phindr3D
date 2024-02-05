@@ -22,6 +22,11 @@ import matplotlib
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import KFold
+from sklearn.model_selection import GridSearchCV
+from scipy.optimize import curve_fit
 
 try:
     from .interactive_click import interactive_points
@@ -35,7 +40,7 @@ except ImportError:
     from src.Training import *
 
 class resultsWindow(QDialog):
-    """Build a GUI window for the user to analyze data and view plots."""
+    """Build a GUI window for the user to analyze data and view plots."""  
     def __init__(self, color, metadata, platemap = None):
         """Construct the GUI window for users to analyze data and view plots."""
         super(resultsWindow, self).__init__()
@@ -56,6 +61,7 @@ class resultsWindow(QDialog):
         data = menubar.addMenu("Data Analysis")
         classification = data.addMenu("Classification")
         selectclasses = classification.addAction("Select Classes")
+        doseResponse = classification.addAction("Plot Dose Response")
         clustering = data.addMenu("Clustering")
         estimate = clustering.addAction("Estimate Clusters")
         setnumber = clustering.addAction("Set Number of Clusters")
@@ -99,8 +105,10 @@ class resultsWindow(QDialog):
         #menu actions activated
         inputfile.triggered.connect(
             lambda: self.loadFeaturefile(colordropdown, map_type.currentText(), True))
-        selectclasses.triggered.connect(
-            lambda: TrainingFunctions().selectclasses(self.feature_file[0], self.platemap))
+        selectclasses.triggered.connect(                    # classificationRF
+            lambda: self.classificationRF())                                                                          
+        doseResponse.triggered.connect(
+            lambda: self.plotDoseResponse())
         estimate.triggered.connect(
             lambda: Clustering.Clustering().cluster_est(self.filtered_data)
                 if len(self.plot_data) > 0
@@ -139,10 +147,11 @@ class resultsWindow(QDialog):
 
         # get size of points
         self.point_size = 10
+        self.alpha = 0.1
 
         # plot points
         sc_plot = self.main_plot.axes.scatter3D(
-            [], [], [], s=self.point_size, alpha=1, depthshade=False)  # , picker=True)
+            [], [], [], s=self.point_size, alpha=self.alpha, depthshade=False)  # , picker=True)
         self.main_plot.axes.set_position([-0.2, -0.05, 1, 1])
         self.original_xlim = sc_plot.axes.get_xlim3d()
         self.original_ylim = sc_plot.axes.get_ylim3d()
@@ -300,12 +309,18 @@ class resultsWindow(QDialog):
             max_val = np.max(feature_values)
             # get the point size
             self.point_size = 10 + 90 * (feature_values - min_val) / (max_val - min_val)
+            self.alpha = 0.1
         else:
-            self.point_size = 10
+            print('Error in updatePointSize')
+            pass
+            #self.point_size = 10
+            #self.alpha = 1
 
         # update the point size
         for plot in self.plots:
             plot.set_sizes(self.point_size)
+            plot.set_alpha(self.alpha)
+
 
         # update the plot
         self.main_plot.draw()
@@ -313,10 +328,11 @@ class resultsWindow(QDialog):
     def chooseDataSubset(self):
         """Choose a subset of data to display."""
         try:
-            view = platemapWindow(dataframe = self.platemap, meta = self.metadata, first = False)
+            view = platemapWindow(dataframe = self.platemap, meta = self.feature_file[0], first = False) 
             view.show()
             view.exec()
         except:
+            print('Error in chooseDataSubset')
             pass
 
 
@@ -393,25 +409,206 @@ class resultsWindow(QDialog):
         self.numcluster = clustnum.clust
     # end setnumcluster
 
-    def classificationRF(self, mv):
+    def classificationRF(self):
         """Open a platemap window for the user to select training classes, and pass to random forest model."""
-        featureFile = self.feature_file[0]
         try:
-            view = platemapWindow(dataframe = self.platemap, meta = featureFile, first = False)
+            view = platemapWindow(dataframe = self.platemap, meta = self.feature_file[0], first = False)
             view.show()
             view.exec()
         except:
+            print('Error in classificationRF')
             pass
-        mapOnlyFeature = pd.read_csv('/Users/work/Desktop/SplitImages/tmp.tsv', sep='\t')
-        classes = np.array(mapOnlyFeature['Type'].unique())
-        # samples are labelled as "SAMPLE".
-        mv = self.data_filt(classes, "3d", "PCA", False)
-        X_train, y_train, X_test, y_test= TrainingFunctions().partition_data(mv, lbls, select_grps)
-        class_tbl=TrainingFunctions().random_forest_model(X_train, y_train, X_test, lbls[y_test])
-        #export classification table
-        name = QFileDialog.getSaveFileName(None, 'Save File', filter=".txt")
-        if name[0]!= '':
-            class_tbl.to_csv("".join(name), sep='\t', mode='w')
+
+        try:
+            # first, open the tmp-selectedClassSample.tsv file and get the classes
+            cwd = os.getcwd()
+            mapOnlyDF = pd.read_csv(cwd + '/tmp-selectedClassSample.tsv', sep='\t')
 
 
+            # find columns where all numbers are 0
+            zeroCols = []
+            for col in mapOnlyDF.columns:
+                if mapOnlyDF[col].sum() == 0:
+                    zeroCols.append(col)
+
+            # drop columns where all numbers are 0
+            mapOnlyDF = mapOnlyDF.drop(zeroCols, axis=1)
+
+            # drop rows where the column "NumMV" is 0
+            mapOnlyDF = mapOnlyDF[mapOnlyDF['NumMV'] != 0]
+
+            # drop rows with any NaN values
+            mapOnlyDF = mapOnlyDF.dropna()
+
+            # features are columns that start with MV
+            features = mapOnlyDF.columns[mapOnlyDF.columns.map(lambda col: col.startswith('MV'))]
+
+            # standardize the features
+            mapOnlyDF[features] = (mapOnlyDF[features] - mapOnlyDF[features].mean()) / mapOnlyDF[features].std()
+
+            # also include the Type column
+            dataTypes = pd.Index(['Type'])
+            features = features.append(pd.Index(['Type']))
+
+            # get names of columns that contain the string 'Dose'
+            DoseCols = mapOnlyDF.columns[mapOnlyDF.columns.str.contains('Dose')]
+
+            # append the dose column to the features
+            features = features.append(DoseCols)
+
+            # create a new dataframe with only the features
+            mapOnlyDF = mapOnlyDF[features]
+
+            mapOnlyDF.to_csv('tmp-check.tsv', sep='\t', index=False)
+
+            # separate into two dataframes: one where the 'Type' contains 'SAMPLE' and one where it doesn't
+            samplesDF = mapOnlyDF[mapOnlyDF['Type'].str.contains('SAMPLE')]
+            classesDF = mapOnlyDF[~mapOnlyDF['Type'].str.contains('SAMPLE')]
+            mvs = mapOnlyDF.columns[mapOnlyDF.columns.map(lambda col: col.startswith('MV'))]
+            Xmv = classesDF[mvs]
+            ytype = classesDF['Type']
+
+            # export the samples dataframe
+            samplesDF.to_csv('tmp-samples.tsv', sep='\t', index=False)
+
+            # export the classes dataframe
+            classesDF.to_csv('tmp-classes.tsv', sep='\t', index=False)
+
+            # We will be training a Random Forest model to classify the samples into the classes. First, we need to
+            # train the model using the classes and we will use the model to predict the classes of the samples.
+            # We will use the megavoxel frequencies as features and the classes as labels.
+
+            # First, determine the number of features to use in the model.
+            # We will use cross-validation to determine the optimal number of features.
+            cv_inner = KFold(n_splits=10, shuffle=True)
+            initialRF = RandomForestClassifier(n_estimators=1000)
+
+            # search space is...
+            space = dict()
+            space['max_features'] = [1, 2, 3, 4, 5, 6, 7, 8, 9, len(mvs)]
+            search = GridSearchCV(initialRF, space, scoring='accuracy', cv=cv_inner, refit=True)
+            # fit the model
+            result = search.fit(Xmv, ytype)
+            # the best model is...
+            RF = result.best_estimator_
+
+            
+            #RF.fit(classesDF[features[:-1]], classesDF['Type'])
+
+            # predict the classes of the samples
+            predictions = RF.predict(samplesDF[mvs])
+
+            # add the Dose columns to a predictions dataframe
+            predictionsDF = samplesDF[DoseCols]
+            # rename the columns to 'Dose'
+            predictionsDF.rename(columns={DoseCols[0]: 'Dose'}, inplace=True)
+
+            # add the predictions to the predictions dataframe
+            predictionsDF['Predicted Class'] = predictions
+
+            # For each unique dose, get the percentage of samples in each class
+            # and then put into a dataframe - make it such that for each dose (row),
+            # there is a column for each class and the value is the percentage of
+            # samples in that class
+            dfOutput = pd.DataFrame()
+            for dose in predictionsDF['Dose'].unique():
+                # get the dataframe for each dose
+                doseDF = predictionsDF[predictionsDF['Dose'] == dose]
+                # get the percentage of samples in each class
+                doseDF = doseDF['Predicted Class'].value_counts(normalize=True)
+                # add the dose as a column
+                doseDF = pd.DataFrame(doseDF).transpose()
+                doseDF['Dose'] = dose
+                # concat to the output dataframe
+                dfOutput = pd.concat([dfOutput, doseDF])
+
+            # set the index to the dose
+            dfOutput.set_index('Dose', inplace=True)
+
+            #export classification table
+            name = QFileDialog.getSaveFileName(None, 'Save File', filter=".tsv")
+            if name[0]!= '':
+                dfOutput.to_csv("".join(name), sep='\t', mode='w')
+
+            # finally, delete the tmp-selectedClassSample.tsv file
+            os.remove(cwd + '/tmp-selectedClassSample.tsv')
+        except:
+            # throw an error if the user has not selected a feature file
+            errorWindow("Error Dialog", "Please select Feature file and load platemap in the Main window. No data is currently displayed.")
+            pass
+    # end classificationRF
+        
+    def plotDoseResponse(self):
+        '''Plot a dose-response curve from classification results saved in a .tsv file'''
+        # open the file
+        filename, dump = QFileDialog.getOpenFileName(
+            self, 'Open Classification Results File', '', 'Text files (*.tsv)')
+        if filename != '':
+            # read the file
+            df = pd.read_csv(filename, sep='\t').set_index('Dose')
+
+            # get the doses
+            doses = df.index.to_numpy()
+            print(doses)
+
+            # get the classes
+            classes = df.columns.to_numpy()
+
+            # ask the user to select a class
+            class_, ok = QInputDialog.getItem(self, "Class Selection", "Select a class to plot:", classes, 0, False)
+
+            # now, fit a 4-parameter logistic function to the data
+            # first, get the class data
+            classData = df[class_].to_numpy()
+
+            # fit the function to the data
+            popt = self.fit_ll4(doses, classData)
+
+            # plot the function
+            if ok:
+                fig, ax = plt.subplots()
+                ax.scatter(doses, classData)
+                # use np.linspace to get a smooth curve
+                x = np.linspace(doses[0], doses[-1], 100)
+                ax.plot(x, self.ll4(x, *popt), 'r-')
+                # x-axis is log scale
+                ax.set_xscale('log')
+                ax.set_xlabel('Dose')
+                # write the x-ticks as numbers, not in scientific notation
+                # also, include marking the x-ticks at half of each log interval
+                ax.xaxis.set_major_formatter(matplotlib.ticker.ScalarFormatter())
+                ax.xaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10.0, subs=(0.25,0.5,1.0)))
+                ax.set_ylabel('Percentage of Samples in Class')
+                # y axis is percentage - multiply by 100
+                ax.set_ylim([0, 1.05])
+                ax.set_yticks(np.arange(0, 1.1, 0.1))
+                ax.set_yticklabels(np.arange(0, 110, 10))
+                ax.set_title('Dose-Response Curve for ' + class_ + '\n EC50 = ' + str(np.round(popt[2], 2)))
+                plt.show()
+        else:
+            pass
+    # end plotDoseResponse
+        
+    def fit_ll4(self, x, y):
+        """Fit a 4-parameter logistic function to the data."""
+        # define the function
+        def ll4(x, A, B, C, D):
+            return ((A - D) / (1 + ((x / C) ** B))) + D
+
+        # fit the function to the data
+        try:
+            popt, pcov = curve_fit(ll4, x, y, maxfev=100000)
+        except:
+            print('Error in fit_ll4')
+            pass
+
+        # return the parameters
+        return popt
+    # end fit_ll4
+
+    def ll4(self, x, A, B, C, D):
+        """4-parameter logistic function."""
+        return ((A - D) / (1 + ((x / C) ** B))) + D
+    # end ll4
+        
 # end resultsWindow

@@ -673,7 +673,7 @@ class Metadata:
         On error return one row of num channels entries, each entry np.nan
         """
         numChannels = self.GetNumChannels()
-        intensityThresholdValues = np.full((5000, numChannels), np.nan)  # not sure why we want 5000 rows
+        intensityThresholdValues = np.full((5000, numChannels), np.nan)  # not sure why we want 5000 rows - probably because MATLAB code performance can be improved by preallocating memory which is not necessary in Python.
         # define a value to return on error
         errorVal = np.full((1, numChannels), np.nan)
         startVal = 0
@@ -688,17 +688,15 @@ class Metadata:
             intensityThresholdValues[startVal:endVal+tempThreshold.shape[0], :] = tempThreshold
             startVal += tempThreshold.shape[0]
             endVal += tempThreshold.shape[0]
-        # remember everything gets rescaled from 0 to 1 #drop rows containing nan,
-        # then take medians for each channel#intensityThresholdValues[ii]
-        outputThresholdValues = \
-            intensityThresholdValues[np.isfinite(intensityThresholdValues).any(axis=1)]
 
-        # remember everything gets rescaled from 0 to 1
-        # drop rows containing nan, then take medians for each channel#intensityThresholdValues[ii]
+        outputThresholdValues = \
+            intensityThresholdValues[np.isfinite(intensityThresholdValues).any(axis=1)] # shababkhan
+
         return outputThresholdValues
     # end getImageThresholdValues
 
-    def computeImageParameters(self):
+    #def computeImageParameters(self):
+    def computeImageParameters(self, sliderValue = PhindConfig.intensityThresholdTuningFactor):
         """Compute the scaling factors and thresholds.
 
         Call after loading metadata. Calls functions that compute the scaling factors and thresholds.
@@ -713,7 +711,7 @@ class Metadata:
         self.trainingSet = self.getTrainingFields(self.randTrainingFields)
         (self.lowerbound, self.upperbound) = self.getScalingFactorforImages(self.trainingSet)
         self.intensityThresholdValues = self.getImageThresholdValues(self.trainingSet)
-        intensityThreshold = mquantiles(self.intensityThresholdValues, PhindConfig.intensityThresholdTuningFactor, alphap=0.5, betap=0.5, axis=0)
+        intensityThreshold = mquantiles(self.intensityThresholdValues, sliderValue, alphap=0.5, betap=0.5, axis=0)  # use Type 5 Method - piecewise linear function
         self.intensityThreshold = np.reshape(intensityThreshold, (1, self.GetNumChannels()))
         return True
     # end computeImageParameters
