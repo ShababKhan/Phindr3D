@@ -19,35 +19,42 @@ import cProfile
 import pstats
 
 from src import *
+import threading
 
-def run_mainGUI(iconFile):
-    """Create an instance of MainGUI and run the application."""
-    app = QApplication(sys.argv)
-    window = MainGUI(iconFile)
-    window.show()
-    app.exec()
+class Phindr3D(threading.Thread):  # this will allow us to run the GUI in a separate thread so that we can implement a progress bar.
+    def __init__(self, iconFile):
+        self.iconFile = iconFile
+        threading.Thread.__init__(self)
+
+    def run_mainGUI(self):
+        """Create an instance of MainGUI and run the application."""
+        app = QApplication(sys.argv)
+        window = MainGUI(self.iconFile)
+        window.show()
+        app.exec()
+
+    def run_with_profiling(self):
+        """Run the main GUI with profiling."""
+        with cProfile.Profile() as pr:
+            self.run_mainGUI()
+
+        stats = pstats.Stats(pr)
+        stats.sort_stats(pstats.SortKey.TIME)
+        # Now you have two options, either print the data or save it as a file
+        stats.print_stats()  # Print The Stats
+        stats.dump_stats("phindrstats7.prof")
+        pstats.Stats("phindrstats7.prof").print_stats()  # Saves the data in a file, can be used to see the data visually
+
+# end class Phindr3D
 
 if __name__ == '__main__':
     """Phindr3D is designed for automated cell phenotype analysis."""
     iconFile = path.abspath(
         path.join(path.dirname(__file__), 'phindr3d_icon.png'))
-    # Start the GUI defined in src/GUI/MainGUI.py
-    run_mainGUI(iconFile)
 
+    phindr3d = Phindr3D(iconFile)
 
-
-
-
-
-
-#    with cProfile.Profile() as pr:
-#        run_mainGUI(iconFile) 
-#
-#    stats = pstats.Stats(pr)
-#    stats.sort_stats(pstats.SortKey.TIME)
-#    # Now you have two options, either print the data or save it as a file
-#    stats.print_stats() # Print The Stats
-#    stats.dump_stats("phindrstats7.prof") # Saves the data in a file, can me used to see the data visually
-
+    phindr3d.run_mainGUI()                # <= this is the normal way to run the GUI.
+    #phindr3d.run_with_profiling()
 
 # end main

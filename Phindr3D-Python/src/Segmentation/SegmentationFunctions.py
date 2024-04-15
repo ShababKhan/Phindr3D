@@ -272,7 +272,7 @@ def getfsimage(imstack, segchannel):
     focusIndex = np.zeros((imInfo.Height, imInfo.Width))
     finalImage = np.zeros((imInfo.Height, imInfo.Width))
     for z in zVals:
-        IM = io.imread( stackLayers[zVals[0]].channels[segchannel].channelpath ).astype(np.float64)
+        IM = io.imread( stackLayers[z].channels[segchannel].channelpath ).astype(np.float64)
         imtmp = stdfilt(IM, kernel_size=5)
         xgrad = ndimage.sobel(imtmp, axis=0) #directional gradients
         ygrad = ndimage.sobel(imtmp, axis=1)

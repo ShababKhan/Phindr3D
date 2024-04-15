@@ -38,7 +38,7 @@ class Segmentation:
             'scale_spheroid':1.0,
             'entropy_threshold':1.0,
             'max_img_fraction':0.25,
-            'seg_Channel':'allChannels',
+            'seg_Channel':'All Channels',
             'remove_border_objects':True
             }
         self.settings = self.defaultSettings
@@ -111,10 +111,12 @@ class Segmentation:
         try: 
             for id in mdata.images:
                 imstack = mdata.images[id]
-                if self.settings['seg_Channel'] == 'allChannels':
+                if self.settings['seg_Channel'] == 'All Channels':
                     IM, focusIndex = getfsimage_multichannel(imstack)
                 else:
-                    IM, focusIndex = getfsimage(imstack, self.settings['seg_channel'])
+                    chanIndx = int(self.settings['seg_Channel'])
+                    IM, focusIndex = getfsimage(imstack, chanIndx)
+
                 L = getSegmentedOverlayImage(IM, self.settings)
                 uLabels = np.unique(L)
                 uLabels = uLabels[uLabels != 0]

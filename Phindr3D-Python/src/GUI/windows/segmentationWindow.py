@@ -84,6 +84,11 @@ class segmentationWindow(QDialog):
             maximage = QLineEdit(str(self.segmentation.settings['max_img_fraction']))
             removeborderbox = QCheckBox()
             removeborderbox.setChecked(self.segmentation.settings['remove_border_objects'])
+            channelSelect = QComboBox()
+            channelSelect.addItems(['All Channels', 
+                                    '1', 
+                                    '2', 
+                                    '3'])
             confirm = QPushButton("Confirm")
             cancel = QPushButton("Cancel")
             load = QPushButton('Load settings file')
@@ -99,6 +104,7 @@ class segmentationWindow(QDialog):
                 entropy.setText(str(self.segmentation.settings['entropy_threshold']))
                 maximage.setText(str(self.segmentation.settings['max_img_fraction']))
                 removeborderbox.setChecked(self.segmentation.settings['remove_border_objects'])
+                channelSelect.setCurrentText(self.segmentation.settings['seg_Channel'])
             # end updateSettingDisplay
 
             def updateSettingVals(self):
@@ -112,6 +118,7 @@ class segmentationWindow(QDialog):
                     self.segmentation.settings['entropy_threshold'] = float(entropy.text())
                     self.segmentation.settings['max_img_fraction'] = float(maximage.text())
                     self.segmentation.settings['remove_border_objects'] = removeborderbox.isChecked()
+                    self.segmentation.settings['seg_Channel'] = channelSelect.currentText()
                     return True
                 except ValueError:
                     alert = self.buildErrorWindow(
@@ -187,8 +194,10 @@ class segmentationWindow(QDialog):
             newdialog.layout().addWidget(maximage, 7, 1, 1, 1)
             newdialog.layout().addWidget(QLabel('Remove Border Objects'), 8, 0, 1, 1)
             newdialog.layout().addWidget(removeborderbox, 8, 1, 1, 1)
-            newdialog.layout().addWidget(confirm, 9, 0, 1, 1)
-            newdialog.layout().addWidget(cancel, 9, 1, 1, 1)
+            newdialog.layout().addWidget(QLabel('Segmentation Channel'), 9, 0, 1, 1)
+            newdialog.layout().addWidget(channelSelect, 9, 1, 1, 1)
+            newdialog.layout().addWidget(confirm, 10, 0, 1, 1)
+            newdialog.layout().addWidget(cancel, 10, 1, 1, 1)
             newdialog.setFixedSize(newdialog.minimumSizeHint())
             newdialog.show()
             newdialog.exec()
