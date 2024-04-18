@@ -18,6 +18,7 @@ import numpy as np
 import pandas
 import os.path
 import cv2
+import tifffile as tf
 import imagecodecs
 import json
 from scipy.stats.mstats import mquantiles
@@ -437,7 +438,7 @@ class Metadata:
                     # TO DO Add try-catch here for KeyError
                     imFilePath = theChannels[channelKeys[k]].channelpath
                     # TO DO Add try-catch here for IOError (or similar - check imread api)
-                    IM = cv2.imread(imFilePath, cv2.IMREAD_UNCHANGED)
+                    IM = tf.imread(imFilePath)
                     minVal[j, k] = mquantiles(IM, 0.01, alphap=0.5, betap=0.5)
                     maxVal[j, k] = mquantiles(IM, 0.99, alphap=0.5, betap=0.5)
             minChannel[i, :] = np.amin(minVal, axis=0)
@@ -644,7 +645,7 @@ class Metadata:
                     imFileName = theChannel.channelpath
                 except (IndexError, AttributeError):
                     return errorVal
-                IM = cv2.imread(imFileName, cv2.IMREAD_UNCHANGED)
+                IM = tf.imread(imFileName) 
                 xEnd = -theTileInfo.xOffsetEnd
                 if xEnd == -0:
                     # if the end index is -0, you just index from 1 to behind 1

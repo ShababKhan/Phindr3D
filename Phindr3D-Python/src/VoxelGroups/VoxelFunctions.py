@@ -37,13 +37,14 @@ class VoxelFunctions:
         """Return bin centers of pixels, supervoxels, and mega voxels.
 
         Main function for returning bin centers of pixels, supervoxels, and mega voxels
-        x - m x n (m is number of observations, n is number of channels/category fractions
+        x -> m x n (m is number of observations, n is number of channels/category fractions
         numBins - number of categories.
         """
         Generator = metadata.Generator
-        m = x.shape[0]
+        m = x.shape[0]   # get image size in the first dimension
         maxkIter = 2500
-        if m > 50000:
+        batch_size = 256 * 1000
+        if m > 50000:    
             samSize = 50000
         else:
             samSize = m
@@ -57,7 +58,7 @@ class VoxelFunctions:
                 # max_iter used to be 100. changed because bin-centers don't always match up to real values.
                 kmeans = cluster.MiniBatchKMeans(
                     n_clusters=numBins, init='k-means++', n_init='auto',
-                    max_iter=maxkIter, random_state=random_state).fit(randpermX)
+                    max_iter=maxkIter, batch_size = batch_size, random_state=random_state).fit(randpermX)
                 binCenters[:, :, iRandCycle] = kmeans.cluster_centers_
                 temp1 = np.add(
                     np.array([dfunc.mat_dot(
@@ -71,7 +72,7 @@ class VoxelFunctions:
             binCenters = binCenters[:, :, minDis]
         else:
             kmeans = cluster.MiniBatchKMeans(
-                n_clusters=numBins, init='k-means++', n_init='auto', max_iter=maxkIter,
+                n_clusters=numBins, init='k-means++', n_init='auto', max_iter=maxkIter, batch_size=batch_size,
                 random_state=random_state).fit(x)  # max iter used to be 100
             binCenters = kmeans.cluster_centers_
         return np.abs(binCenters)

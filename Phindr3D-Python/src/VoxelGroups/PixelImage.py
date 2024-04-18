@@ -76,12 +76,12 @@ class PixelImage(VoxelBase):
                 if metadata.intensityNormPerTreatment:
                     img = image.stackLayers[zplane].channels[jChan + 1].channelpath
                     croppedIM[:, :, jChan] = DataFunctions.rescaleIntensity(
-                        cv2.imread(img, cv2.IMREAD_UNCHANGED), low=metadata.lowerbound[grpVal][jChan],
+                        tf.imread(img), low=metadata.lowerbound[grpVal][jChan],
                         high=metadata.upperbound[grpVal][jChan])  # add params later
                 else:
                     img = image.stackLayers[zplane].channels[jChan + 1].channelpath
                     croppedIM[:, :, jChan] = DataFunctions.rescaleIntensity(
-                        cv2.imread(img, cv2.IMREAD_UNCHANGED), low=metadata.lowerbound[jChan],
+                        tf.imread(img), low=metadata.lowerbound[jChan],
                         high=metadata.upperbound[jChan]) # add params later
             xEnd = -tileinfo.xOffsetEnd
             if xEnd == -0:

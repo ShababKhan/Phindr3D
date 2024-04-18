@@ -18,6 +18,7 @@
 import matplotlib.pyplot as plt
 import mahotas as mt
 import cv2 
+import tifffile as tf
 
 try:
     from .VoxelFunctions import *
@@ -129,7 +130,8 @@ class VoxelBase:
                     imFileName = theChannel.channelpath
                 except (IndexError, AttributeError):
                     return errorVal
-                IM = cv2.imread(imFileName, cv2.IMREAD_UNCHANGED)    #io.imread(imFileName)
+                # use tf: IM = cv2.imread(imFileName, cv2.IMREAD_UNCHANGED)    #io.imread(imFileName)
+                IM = tf.imread(imFileName)
                 try:
                     if intensityNormPerTreatment:
                         croppedIM[:, :, jChan] = dfunc.rescaleIntensity(IM,

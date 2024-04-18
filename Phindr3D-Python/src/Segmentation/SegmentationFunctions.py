@@ -272,7 +272,9 @@ def getfsimage(imstack, segchannel):
     focusIndex = np.zeros((imInfo.Height, imInfo.Width))
     finalImage = np.zeros((imInfo.Height, imInfo.Width))
     for z in zVals:
-        IM = io.imread( stackLayers[z].channels[segchannel].channelpath ).astype(np.float64)
+        #IM = io.imread( stackLayers[z].channels[segchannel].channelpath ).astype(np.float64)
+        # use tf instead of io.imread
+        IM = tf.imread( stackLayers[z].channels[segchannel].channelpath ).astype(np.float64)
         imtmp = stdfilt(IM, kernel_size=5)
         xgrad = ndimage.sobel(imtmp, axis=0) #directional gradients
         ygrad = ndimage.sobel(imtmp, axis=1)
@@ -303,9 +305,10 @@ def getfsimage_multichannel(imstack):
     for z in zVals:
         for i, c in enumerate(chans):
             if i == 0:
-                IM = io.imread(stackLayers[z].channels[c].channelpath).astype(np.float64)
+                IM = tf.imread(stackLayers[z].channels[c].channelpath).astype(np.float64)
+                #IM = io.imread(stackLayers[z].channels[c].channelpath).astype(np.float64)
             else:
-                IM = np.maximum(IM, io.imread(stackLayers[z].channels[c].channelpath).astype(np.float64))
+                IM = np.maximum(IM, tf.imread(stackLayers[z].channels[c].channelpath).astype(np.float64))
         imtmp = stdfilt(IM, kernel_size=5)
         xgrad = ndimage.sobel(imtmp, axis=0) #directional gradients
         ygrad = ndimage.sobel(imtmp, axis=1)

@@ -145,7 +145,7 @@ class Segmentation:
                     for iObjects in range(numObjects):
                         for iPlanes in range(int(ll[iObjects, 0]), int(ll[iObjects, 1]+1)):
                             for chan in channels:
-                                IM1 = io.imread( imstack.stackLayers[iPlanes].channels[chan].channelpath )
+                                IM1 = tf.imread( imstack.stackLayers[iPlanes].channels[chan].channelpath )
                                 IM2 = IM1[fstruct[iObjects]]
                                 tmpparts = filenameParts.copy()
                                 tmpparts.append(f'Z{iPlanes}')
