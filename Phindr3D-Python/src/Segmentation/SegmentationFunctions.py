@@ -22,6 +22,7 @@ from scipy import ndimage
 from skimage import filters
 from skimage import morphology as morph
 from skimage import segmentation as seg
+import time
 
 try:
     from ..Data.DataFunctions import *
@@ -297,7 +298,7 @@ def getfsimage_multichannel(imstack):
     stackLayers = imstack.stackLayers
     zVals = list(stackLayers.keys())
     chans = list(stackLayers[zVals[0]].channels.keys())
-    #want to end up with fnames == images from single channel being read in stack order.
+    # want to end up with fnames == images from single channel being read in stack order.
     imInfo = imfinfo( stackLayers[zVals[0]].channels[chans[0]].channelpath )
     prevImage = np.full((imInfo.Height, imInfo.Width), -1*np.inf)
     focusIndex = np.zeros((imInfo.Height, imInfo.Width))
@@ -323,14 +324,32 @@ def getfsimage_multichannel(imstack):
 def getSegmentedOverlayImage(final_im, pdict):
     """Get segmented overlay image."""
     #min_area_spheroid, radius_spheroid, smoothin_param, entropy_thresh, intensity_threshold, scale_spheroid):
+    
     # newfim = final_im.copy()
-    SE = morph.disk(2*pdict['radius_spheroid'])
-    IM2 = cv.morphologyEx(final_im.astype('uint16'), cv.MORPH_TOPHAT, SE).astype('float64')
+    #SE = morph.disk(2*pdict['radius_spheroid'])
+    #IM2 = cv.morphologyEx(final_im.astype('uint16'), cv.MORPH_TOPHAT, SE).astype('float64')
+
+    # Downsample the image by a factor of 2 - speeds up the process - hopefully can be validated.
+    start = time.time()
+    final_im_downsampled = cv.pyrDown(final_im)
+    final_im_downsampled = cv.pyrDown(final_im_downsampled)
+
+    # Reduce the size of the structuring element by 4 - original size was 2*radius_spheroid.
+    SE = morph.disk(0.5 * pdict['radius_spheroid'])
+
+    # Perform the morphological operation on the downsampled image
+    IM2 = cv.morphologyEx(final_im_downsampled.astype('uint16'), cv.MORPH_TOPHAT, SE).astype('float64')
+
+    # Upsample the result to the original resolution
+    IM2 = cv.pyrUp(IM2)
+    IM2 = cv.pyrUp(IM2)
+
     IM4 = smoothImage(IM2, pdict['smoothin_param'])
     minIM = np.min(IM4)
     maxIM = np.max(IM4)
     IM4 = (IM4 - minIM)/(maxIM - minIM) #rescale 0-1
     IM4 = imadjust(IM4, gamma=0.5)
+
     # #im4 is float image from 0 to 1
     IM6 = segmentImage(IM4, pdict['min_area_spheroid'])
     IM6 = (IM6 > 0).astype('uint8')
@@ -338,31 +357,41 @@ def getSegmentedOverlayImage(final_im, pdict):
     IM6 = imfill(IM6)
     IM6 = bwareaopen(IM6, 20) #open sets of connected components with less than 20 members 
     #im6 is binary image
-    IM7 = ndimage.distance_transform_edt(IM6)# matlab bwdist gives euclidean distance transform from non-zero elements. use on binary inverse of IM6 so distance transform from zero-elements. ndimage.distance_transform_edt is already distance from zero elements
+
+    IM7 = ndimage.distance_transform_edt(IM6) # matlab bwdist gives euclidean distance transform from non-zero elements. use on binary inverse of IM6 so distance transform from zero-elements. ndimage.distance_transform_edt is already distance from zero elements
     #im7 is float image
+
     if pdict['scale_spheroid'] > 1:
         pdict['scale_spheroid'] = 1
     elif pdict['scale_spheroid'] <= 0:
         pdict['scale_spheroid'] = 0.1
+
     splitFactor = pdict['scale_spheroid'] * pdict['radius_spheroid']
     IM9 = imextendedmax(IM7, splitFactor)
     bw = np.logical_or(np.logical_not(IM6), IM9)
     IM10 = imimposemin(imcomplement(IM4*IM7),bw)
     L = watershed(IM10)
     L = np.maximum(L-1, 0) #background label is 1, so replace with 0.
+
     if pdict['remove_border_objects'] == True:
         L = removeBorderObjects(L, 30) #used to be 10.
+
     IM11 = (final_im - np.min(final_im)) / (np.max(final_im) - np.min(final_im))
     labels, areas, final_im_means, entropies = regionprops(L, final_im, IM11)
+
     # return L, labels, areas, final_im_means, entropies
+
     if np.sum(areas) != 0:
         i2 = areas >= pdict['min_area_spheroid']
         i3 = final_im_means >= pdict['intensity_threshold']
         i4 = entropies >= pdict['entropy_threshold']
         ii = ((i2*i3*i4) == 0) #ii is True at the indices of all the labels that we want to discard
+
         for l in labels[np.nonzero(ii)]:
             L[L==l] = 0
+
     L = resetLabelImage(L)
+    print('Segmentation time: ', time.time()-start)
     return L 
 # end getSegmentedOverlayImage
 

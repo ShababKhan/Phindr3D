@@ -109,15 +109,15 @@ class Segmentation:
     def RunSegmentation(self, mdata):
         """Segment a 3D image stack into component organoids."""
         try: 
-            for id in mdata.images:
+            for id in mdata.images: # for each well:
                 imstack = mdata.images[id]
                 if self.settings['seg_Channel'] == 'All Channels':
                     IM, focusIndex = getfsimage_multichannel(imstack)
                 else:
                     chanIndx = int(self.settings['seg_Channel'])
-                    IM, focusIndex = getfsimage(imstack, chanIndx)
+                    IM, focusIndex = getfsimage(imstack, chanIndx) # 
 
-                L = getSegmentedOverlayImage(IM, self.settings)
+                L = getSegmentedOverlayImage(IM, self.settings) # we get the binary image of the segmented objects
                 uLabels = np.unique(L)
                 uLabels = uLabels[uLabels != 0]
                 numObjects = len(uLabels)
