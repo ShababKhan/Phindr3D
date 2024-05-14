@@ -28,6 +28,7 @@ try:
     from ..Data.DataFunctions import *
 except ImportError:
     from src.Data.DataFunctions import *
+from tifffile import TiffFile, imwrite
 
 """Functions associated with segmentation, translated closely from the MATLAB implementation. 
 

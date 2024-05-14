@@ -21,20 +21,28 @@ import pstats
 from src import *
 import threading
 
-class Phindr3D(threading.Thread):  # this will allow us to run the GUI in a separate thread so that we can implement a progress bar.
+class Phindr3D(threading.Thread):
+    """
+    This class allows us to run the GUI in a separate thread so that we can implement a progress bar.
+    """
+
     def __init__(self, iconFile):
         self.iconFile = iconFile
         threading.Thread.__init__(self)
 
     def run_mainGUI(self):
-        """Create an instance of MainGUI and run the application."""
+        """
+        Create an instance of MainGUI and run the application.
+        """
         app = QApplication(sys.argv)
         window = MainGUI(self.iconFile)
         window.show()
         app.exec()
 
     def run_with_profiling(self):
-        """Run the main GUI with profiling."""
+        """
+        Run the main GUI with profiling.
+        """
         with cProfile.Profile() as pr:
             self.run_mainGUI()
 
