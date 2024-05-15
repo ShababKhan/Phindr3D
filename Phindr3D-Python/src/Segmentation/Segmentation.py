@@ -19,6 +19,7 @@ import json
 import numpy as np
 import tifffile as tf
 from scipy import ndimage
+import time 
 
 try:
     from .SegmentationFunctions import *
@@ -153,12 +154,15 @@ class Segmentation:
 
         try: 
             for id in mdata.images: # for each well:
+                print(f'Segmenting image of well {id}')
+                start = time.time()
                 imstack = mdata.images[id]
                 if self.settings['seg_Channel'] == 'All Channels':
                     IM, focusIndex = getfsimage_multichannel(imstack)
                 else:
                     chanIndx = int(self.settings['seg_Channel'])
-                    IM, focusIndex = getfsimage(imstack, chanIndx) 
+                    IM, focusIndex = getfsimage(imstack, chanIndx)
+                print(f'getfsimage time: {time.time()-start}') 
 
                 L = getSegmentedOverlayImage(IM, self.settings) 
                 uLabels = np.unique(L)
@@ -172,6 +176,7 @@ class Segmentation:
                 filenameParts = [f'{param[0]}{otherparams[param]}' for param in otherparams]
 
                 if len(ll) > 0:
+                    print(f'Number of objects: {len(ll)}')
                     L = cv.dilate(L, morph.disk(25))
                     fstruct = ndimage.find_objects(L.astype(int))
                     for iObjects in range(len(ll)):
@@ -198,6 +203,7 @@ class Segmentation:
             self.allIDs = list(self.focusIms.keys())
             self.IDidx = 0
             self.segmentationSuccess = True
+            print(f'Segmentation time in total for this well: {time.time()-start}')
         except:
             self.allIDs = []
             self.IDidx = None
