@@ -161,7 +161,7 @@ class Segmentation:
                     IM, focusIndex = getfsimage_multichannel(imstack)
                 else:
                     chanIndx = int(self.settings['seg_Channel'])
-                    IM, focusIndex = getfsimage(imstack, chanIndx)
+                    IM, focusIndex = getfsimage_scharr(imstack, chanIndx)
                 print(f'getfsimage time: {time.time()-start}') 
 
                 L = getSegmentedOverlayImage(IM, self.settings) 

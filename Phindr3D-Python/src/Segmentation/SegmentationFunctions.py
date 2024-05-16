@@ -20,6 +20,7 @@ import tifffile as tf
 import skimage.io as io
 from scipy import ndimage
 from skimage import filters
+from skimage.filters import roberts, scharr
 from skimage import morphology as morph
 from skimage import segmentation as seg
 import time
@@ -257,6 +258,55 @@ def regionprops(watershed_img, final_im, IM11):
         entropy[i] = np.mean(ent[watershed_img == label])
     return labels, areas, final_im_intensities, entropy
 # end regionprops
+
+def getfsimage_roberts(imstack, segchannel):
+    ''' 
+    The idea behind the Roberts Cross operator is to approximate the 
+    gradient of an image through discrete differentiation, which is achieved 
+    by computing the sum of the squares of the differences between diagonally 
+    adjacent pixels. It highlights regions of high spatial frequency which 
+    often correspond to edges.
+    '''
+
+    stackLayers = imstack.stackLayers
+    zVals = list(stackLayers.keys())
+    imInfo = imfinfo( stackLayers[zVals[0]].channels[segchannel].channelpath )
+    focusIndex = np.zeros((imInfo.Height, imInfo.Width))
+    finalImage = np.zeros((imInfo.Height, imInfo.Width))
+    maxEdge = np.zeros((imInfo.Height, imInfo.Width))
+    for z in zVals:
+        IM = tf.imread( stackLayers[z].channels[segchannel].channelpath ).astype(np.float64)
+        edge = roberts(IM)
+        mask = edge > maxEdge
+        focusIndex[mask] = z
+        finalImage[mask] = IM[mask]
+        maxEdge = np.maximum(edge, maxEdge)
+    return finalImage, focusIndex
+# end getfsimage_roberts
+
+def getfsimage_scharr(imstack, segchannel):
+    '''
+    The Scharr operator is a more advanced edge detection algorithm than 
+    Roberts Cross that computes the gradient of an image using convolution. 
+    It is slightly more computationally expensive than the Roberts Cross 
+    operator, but it is more accurate and less sensitive to noise.
+    '''
+
+    stackLayers = imstack.stackLayers
+    zVals = list(stackLayers.keys())
+    imInfo = imfinfo( stackLayers[zVals[0]].channels[segchannel].channelpath )
+    focusIndex = np.zeros((imInfo.Height, imInfo.Width))
+    finalImage = np.zeros((imInfo.Height, imInfo.Width))
+    maxEdge = np.zeros((imInfo.Height, imInfo.Width))
+    for z in zVals:
+        IM = tf.imread( stackLayers[z].channels[segchannel].channelpath ).astype(np.float64)
+        edge = scharr(IM)
+        mask = edge > maxEdge
+        focusIndex[mask] = z
+        finalImage[mask] = IM[mask]
+        maxEdge = np.maximum(edge, maxEdge)
+    return finalImage, focusIndex
+# end getfsimage_scharr
 
 def getfsimage(imstack, segchannel):
     """Output best focussed image from a set of 3D image slices.
