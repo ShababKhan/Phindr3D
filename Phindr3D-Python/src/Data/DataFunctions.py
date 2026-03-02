@@ -150,18 +150,18 @@ class DataFunctions:
         df['MetadataFile'] = metadatafilename
         # fill in file paths for each channel
         fileparts = re.split(r'\(\?P<\w+>\.?\\?\w?\+?\)', regex) #split the regex around all the capturing groups.
-        for index, row in df.iterrows(): #iterate through the rows of the df to re-get capturing group info 
-            for chan in channels:        #also have to go through the channels to get channel info
-                fname = ''
-                for i, dkey in enumerate(d.keys()): #build the expected filename back up from the split regex.
-                    fname += fileparts[i]
-                    if dkey == 'Channel':
-                        fname += str(chan)
-                    else:
-                        fname += row[dkey]
-                fname += fileparts[i+1] #add the .tif(f)
-                df.iat[index, df.columns.get_loc(f'Channel_{chan}')] \
-                    = os.path.abspath(f'{folder_path}/{fname}') #place the name at the right spot
+        dkeys = list(d.keys()) # use the keys from the last matched filename's groupdict
+        abs_folder_path = os.path.abspath(folder_path)
+        for chan in channels:
+            fname_series = pd.Series('', index=df.index)
+            for i, dkey in enumerate(dkeys):
+                fname_series += fileparts[i]
+                if dkey == 'Channel':
+                    fname_series += str(chan)
+                else:
+                    fname_series += df[dkey].astype(str)
+            fname_series += fileparts[len(dkeys)]
+            df[f'Channel_{chan}'] = abs_folder_path + '/' + fname_series
         df['Stack']=df['Stack'].astype(int)
         df.sort_values(by=['ImageID','Stack'], ascending=[1, 1], inplace=True)
         df.replace(r'\\', r'/', regex=True, inplace=True)
