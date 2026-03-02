@@ -550,7 +550,6 @@ class Clustering:
 
             # Bomb out if too many halving steps are required
             if j == maxhalves - 1:
-                # print('Warning: maxhalves exceeded. Sammon mapping may not converge...')
                 pass
 
             # Evaluate termination criterion
@@ -561,11 +560,6 @@ class Clustering:
 
             # Report progress
             E = E_new
-            # if display > 1:
-                # print('epoch = %d : E = %12.10f' % (i + 1, E * scale))
-
-        # if i == maxiter - 1:
-        #     print('Warning: maxiter exceeded. Sammon mapping may not have converged...')
 
         # Fiddle stress to match the original Sammon paper
         E = E * scale
