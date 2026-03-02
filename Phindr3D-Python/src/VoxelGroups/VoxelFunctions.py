@@ -22,6 +22,7 @@ try:
 except ImportError:
     from src.Data import DataFunctions as dfunc
 
+
 class VoxelFunctions:
     """Static methods for finding voxel properties.
 
@@ -41,10 +42,10 @@ class VoxelFunctions:
         numBins - number of categories.
         """
         Generator = metadata.Generator
-        m = x.shape[0]   # get image size in the first dimension
+        m = x.shape[0]  # get image size in the first dimension
         maxkIter = 2500
         batch_size = 256 * 1000
-        if m > 50000:    
+        if m > 50000:
             samSize = 50000
         else:
             samSize = m
@@ -53,30 +54,54 @@ class VoxelFunctions:
             binCenters = np.zeros((numBins, x.shape[1], numRandRpt))
             sumD = np.zeros(numRandRpt)
             for iRandCycle in range(0, numRandRpt):
-                randpermX = np.array([x[j] for j in Generator.Generator.choice(
-                    m, size=samSize, replace=False, shuffle=False)])
+                randpermX = np.array(
+                    [
+                        x[j]
+                        for j in Generator.Generator.choice(
+                            m, size=samSize, replace=False, shuffle=False
+                        )
+                    ]
+                )
                 # max_iter used to be 100. changed because bin-centers don't always match up to real values.
                 kmeans = cluster.MiniBatchKMeans(
-                    n_clusters=numBins, init='k-means++', n_init='auto',
-                    max_iter=maxkIter, batch_size = batch_size, random_state=random_state).fit(randpermX)
+                    n_clusters=numBins,
+                    init="k-means++",
+                    n_init="auto",
+                    max_iter=maxkIter,
+                    batch_size=batch_size,
+                    random_state=random_state,
+                ).fit(randpermX)
                 binCenters[:, :, iRandCycle] = kmeans.cluster_centers_
                 temp1 = np.add(
-                    np.array([dfunc.mat_dot(
-                        binCenters[:, :, numRandRpt - 1],
-                        binCenters[:, :, numRandRpt - 1], axis=1)]).T,
-                    dfunc.mat_dot(x, x, axis=1)).T  # still not sure which one of this or the next should be transposed
+                    np.array(
+                        [
+                            dfunc.mat_dot(
+                                binCenters[:, :, numRandRpt - 1],
+                                binCenters[:, :, numRandRpt - 1],
+                                axis=1,
+                            )
+                        ]
+                    ).T,
+                    dfunc.mat_dot(x, x, axis=1),
+                ).T  # still not sure which one of this or the next should be transposed
                 temp2 = 2 * (x @ binCenters[:, :, numRandRpt - 1].T)
-                a = (temp1 - temp2)
+                a = temp1 - temp2
                 sumD[iRandCycle] = np.sum(np.amin(a, axis=1))
             minDis = np.argmin(sumD)
             binCenters = binCenters[:, :, minDis]
         else:
             kmeans = cluster.MiniBatchKMeans(
-                n_clusters=numBins, init='k-means++', n_init='auto', max_iter=maxkIter, batch_size=batch_size,
-                random_state=random_state).fit(x)  # max iter used to be 100
+                n_clusters=numBins,
+                init="k-means++",
+                n_init="auto",
+                max_iter=maxkIter,
+                batch_size=batch_size,
+                random_state=random_state,
+            ).fit(x)  # max iter used to be 100
             binCenters = kmeans.cluster_centers_
         return np.abs(binCenters)
+
     # end getPixelBins
+
+
 # end VoxelFunctions
-
-

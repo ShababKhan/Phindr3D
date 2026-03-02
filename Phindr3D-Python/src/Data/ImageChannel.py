@@ -14,8 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
+
 class ImageChannel:
     """This class handles single image files associated with a single data channel."""
+
     def __init__(self):
         """ImageChannel class constructor."""
         self.channelpath = ""
@@ -24,4 +26,6 @@ class ImageChannel:
     def setPath(self, channelpath):
         """Set the channelpath member variable value."""
         self.channelpath = channelpath
+
+
 # end class ImageChannel

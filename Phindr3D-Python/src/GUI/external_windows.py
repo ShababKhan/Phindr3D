@@ -15,27 +15,49 @@
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
 from .windows import *
-from .windows import platemapWindow
 
-class external_windows():
+
+class external_windows:
     """Abstract class inherited by MainGUI with build methods for other windows."""
+
     def buildExtractWindow(self):
         """Create an instance of class extractWindow."""
         return extractWindow()
 
-    def buildResultsWindow(self, color, metadata = None, platemap = None):
+    def buildResultsWindow(self, color, metadata=None, platemap=None):
         """Create an instance of class resultsWindow."""
         return resultsWindow(color, metadata, platemap)
 
     def buildParamWindow(
-            self, metaheader, supercoords, svcategories, megacoords,
-            mvcategories, voxelnum, trainingnum, bg, norm, conditiontrain,
-            trainingcol, treatcol):
+        self,
+        metaheader,
+        supercoords,
+        svcategories,
+        megacoords,
+        mvcategories,
+        voxelnum,
+        trainingnum,
+        bg,
+        norm,
+        conditiontrain,
+        trainingcol,
+        treatcol,
+    ):
         """Create an instance of class paramWindow."""
         return paramWindow(
-            metaheader, supercoords, svcategories, megacoords,
-            mvcategories, voxelnum, trainingnum, bg, norm, conditiontrain,
-            trainingcol, treatcol)
+            metaheader,
+            supercoords,
+            svcategories,
+            megacoords,
+            mvcategories,
+            voxelnum,
+            trainingnum,
+            bg,
+            norm,
+            conditiontrain,
+            trainingcol,
+            treatcol,
+        )
 
     def buildSegmentationWindow(self, metadata):
         """Create an instance of class segmentationWindow."""
@@ -48,4 +70,3 @@ class external_windows():
     def buildRegexWindow(self):
         """Create an instance of class regexWindow."""
         return regexWindow()
-

@@ -20,6 +20,7 @@ import tifffile as tf
 import pandas as pd
 import numpy as np
 
+
 class DataFunctions:
     """Static methods for Metadata handling.
 
@@ -53,6 +54,7 @@ class DataFunctions:
         except re.error:
             outdict = {}
         return outdict
+
     # end parseAndCompareRegex
 
     @staticmethod
@@ -63,9 +65,12 @@ class DataFunctions:
         Returns True if the directory exists, False if it does not.
         """
         if not isinstance(theDir, str):
-            raise TypeError("Wrong type in static method DataFunctions.directoryExists. Argument must be a string.")
+            raise TypeError(
+                "Wrong type in static method DataFunctions.directoryExists. Argument must be a string."
+            )
         else:
             return os.path.exists(theDir)
+
     # end directoryExists
 
     @staticmethod
@@ -83,19 +88,24 @@ class DataFunctions:
         if len(strlist) <= 1:
             return regex
         else:
-            for i in range(len(strlist)-1):
+            for i in range(len(strlist) - 1):
                 outstring = outstring + strlist[i]
                 try:
-                    theSep = "?<" if (strlist[i+1][0] == '=' or strlist[i+1][0] == '!') else "?P<"
+                    theSep = (
+                        "?<"
+                        if (strlist[i + 1][0] == "=" or strlist[i + 1][0] == "!")
+                        else "?P<"
+                    )
                 except IndexError:
                     theSep = "?<"
                 outstring = outstring + theSep
-            outstring = outstring + strlist[len(strlist)-1]
+            outstring = outstring + strlist[len(strlist) - 1]
         return outstring
+
     # end regexPatternCompatibility
 
     @staticmethod
-    def createMetadata(folder_path, regex, mdatafilename='metadata_python.tsv'):
+    def createMetadata(folder_path, regex, mdatafilename="metadata_python.tsv"):
         """Create a metadata txt file in the same format as used in the matlab Phindr implementation.
 
         folder_path: path to image folder (full or relative)
@@ -108,71 +118,85 @@ class DataFunctions:
         """
 
         f = os.listdir(folder_path)
-        folder_path.replace(r'\\', r'/')
-        metadatafilename = f'{os.path.abspath(folder_path)}/{mdatafilename}'
-        #read images in folder
+        folder_path.replace(r"\\", r"/")
+        metadatafilename = f"{os.path.abspath(folder_path)}/{mdatafilename}"
+        # read images in folder
         rows = []
         for i, file in enumerate(f):
             m = re.fullmatch(regex, file)
             if m != None:
                 d = m.groupdict()
                 rows.append(d)
-        #make sure rows is not empty and that Channel and Stack are in the groups.
+        # make sure rows is not empty and that Channel and Stack are in the groups.
         if len(rows) == 0:
             return False
-        if ('Channel' not in rows[0].keys()) or ('Stack' not in rows[0].keys()):
+        if ("Channel" not in rows[0].keys()) or ("Stack" not in rows[0].keys()):
             raise MissingChannelStackError
         tmpdf = pd.DataFrame(rows)
-        #make new dataframe with desired colummns
+        # make new dataframe with desired colummns
         tags = tmpdf.columns
-        channels = np.unique(tmpdf['Channel'])
+        channels = np.unique(tmpdf["Channel"])
         cols = []
         for chan in channels:
-            cols.append(f'Channel_{chan}')
+            cols.append(f"Channel_{chan}")
         for tag in tags:
-            if tag not in ['Channel', 'Stack', '_file']:
+            if tag not in ["Channel", "Stack", "_file"]:
                 cols.append(tag)
-        cols.append('Stack')
-        cols.append('MetadataFile')
+        cols.append("Stack")
+        cols.append("MetadataFile")
         df = pd.DataFrame(columns=cols)
-        #add data to the new dataframe
-        stacksubset = [tag for tag in tags if tag not in ['Channel', '_file']]
-        idsubset = [tag for tag in tags if tag not in ['Channel', '_file', 'Stack']]
-        df[stacksubset] = tmpdf.drop_duplicates(subset = stacksubset)[stacksubset]
+        # add data to the new dataframe
+        stacksubset = [tag for tag in tags if tag not in ["Channel", "_file"]]
+        idsubset = [tag for tag in tags if tag not in ["Channel", "_file", "Stack"]]
+        df[stacksubset] = tmpdf.drop_duplicates(subset=stacksubset)[stacksubset]
         df.reset_index(inplace=True, drop=True)
-        #add unique image ids based on the "other tags"
-        idtmp = tmpdf.drop_duplicates(subset = idsubset)[idsubset].reset_index(drop=True)
+        # add unique image ids based on the "other tags"
+        idtmp = tmpdf.drop_duplicates(subset=idsubset)[idsubset].reset_index(drop=True)
         idtmp.reset_index(inplace=True)
-        idtmp.rename(columns={'index':'ImageID'}, inplace=True)
-        idtmp['ImageID'] = idtmp['ImageID'] + 1
+        idtmp.rename(columns={"index": "ImageID"}, inplace=True)
+        idtmp["ImageID"] = idtmp["ImageID"] + 1
         df = pd.merge(df, idtmp, left_on=idsubset, right_on=idsubset)
-        #give metadatafilename
-        df['MetadataFile'] = metadatafilename
+        # give metadatafilename
+        df["MetadataFile"] = metadatafilename
         # fill in file paths for each channel
-        fileparts = re.split(r'\(\?P<\w+>\.?\\?\w?\+?\)', regex) #split the regex around all the capturing groups.
-        for index, row in df.iterrows(): #iterate through the rows of the df to re-get capturing group info 
-            for chan in channels:        #also have to go through the channels to get channel info
-                fname = ''
-                for i, dkey in enumerate(d.keys()): #build the expected filename back up from the split regex.
+        fileparts = re.split(
+            r"\(\?P<\w+>\.?\\?\w?\+?\)", regex
+        )  # split the regex around all the capturing groups.
+        for (
+            index,
+            row,
+        ) in (
+            df.iterrows()
+        ):  # iterate through the rows of the df to re-get capturing group info
+            for (
+                chan
+            ) in channels:  # also have to go through the channels to get channel info
+                fname = ""
+                for i, dkey in enumerate(
+                    d.keys()
+                ):  # build the expected filename back up from the split regex.
                     fname += fileparts[i]
-                    if dkey == 'Channel':
+                    if dkey == "Channel":
                         fname += str(chan)
                     else:
                         fname += row[dkey]
-                fname += fileparts[i+1] #add the .tif(f)
-                df.iat[index, df.columns.get_loc(f'Channel_{chan}')] \
-                    = os.path.abspath(f'{folder_path}/{fname}') #place the name at the right spot
-        df['Stack']=df['Stack'].astype(int)
-        df.sort_values(by=['ImageID','Stack'], ascending=[1, 1], inplace=True)
-        df.replace(r'\\', r'/', regex=True, inplace=True)
-        df.to_csv(metadatafilename, sep='\t', index=False)
-        return True # return value to indicate success of function
+                fname += fileparts[i + 1]  # add the .tif(f)
+                df.iat[index, df.columns.get_loc(f"Channel_{chan}")] = os.path.abspath(
+                    f"{folder_path}/{fname}"
+                )  # place the name at the right spot
+        df["Stack"] = df["Stack"].astype(int)
+        df.sort_values(by=["ImageID", "Stack"], ascending=[1, 1], inplace=True)
+        df.replace(r"\\", r"/", regex=True, inplace=True)
+        df.to_csv(metadatafilename, sep="\t", index=False)
+        return True  # return value to indicate success of function
+
     # end createMetadata
 
     @staticmethod
     def mat_dot(A, B, axis=0):
         """Equivalent to dot product for matlab (can choose axis as well)."""
         return np.sum(A.conj() * B, axis=axis)
+
     # end mat_dot
 
     # regexpi
@@ -199,15 +223,17 @@ class DataFunctions:
         itr = 0
         for i in range(1, imgw, blk_sizew):
             for j in range(1, imgh, blk_sizeh):
-                blk = mtx[i - 1:i + blk_sizew - 1, j - 1:j + blk_sizeh - 1].ravel()
+                blk = mtx[i - 1 : i + blk_sizew - 1, j - 1 : j + blk_sizeh - 1].ravel()
                 itr = itr + 1
                 blk_mtx[:, itr - 1] = blk
         return blk_mtx
+
     # end im2col
 
     @staticmethod
     def imfinfo(filename):
         """Create and return an info class with image height, width, and format."""
+
         class info:
             pass
 
@@ -217,10 +243,11 @@ class DataFunctions:
         metadata = {}
         for tag in file.tags.values():
             metadata[tag.name] = tag.value
-        info.Height = metadata['ImageLength']
-        info.Width = metadata['ImageWidth']
-        info.Format = 'tif'
+        info.Height = metadata["ImageLength"]
+        info.Width = metadata["ImageWidth"]
+        info.Format = "tif"
         return info
+
     # end imfinfo
 
     @staticmethod
@@ -232,22 +259,30 @@ class DataFunctions:
         im[im > 1] = 1
         im[im < 0] = 0
         return im
+
     # end rescaleIntensity
 
     @staticmethod
     def selectPixelsbyweights(x):
         """called in getTrainingPixels."""
-        n, bin_edges = np.histogram(x, bins=(int(1/0.025) + 1), range=(0,1), )
+        n, bin_edges = np.histogram(
+            x,
+            bins=(int(1 / 0.025) + 1),
+            range=(0, 1),
+        )
         q = np.digitize(x, bin_edges)
         n = n / np.sum(n)
         p = np.zeros(q.shape)
         for i in range(0, n.shape[0]):
-            p[q==i] = n[i]
+            p[q == i] = n[i]
         p = 1 - p
-        p = np.sum(p>np.random.random((q.shape)), axis=1) #q shape may or may not be correct
+        p = np.sum(
+            p > np.random.random((q.shape)), axis=1
+        )  # q shape may or may not be correct
         p = p != 0
         p = x[p, :]
         return p
+
     # end selectPixelsbyweights
 
     @staticmethod
@@ -259,45 +294,78 @@ class DataFunctions:
         meanIntensity = np.mean(IM.flatten())
         numThresholdParam = len(freq)
         binCenters -= meanIntensity
-        den1 = np.sqrt((binCenters ** 2) @ freq.T)
+        den1 = np.sqrt((binCenters**2) @ freq.T)
         numAllPixels = np.sum(
-            freq)  # freq should hopefully be a 1D vector so summ of all elements should be right.
+            freq
+        )  # freq should hopefully be a 1D vector so summ of all elements should be right.
         covarMat = np.zeros(numThresholdParam)
         for iThreshold in range(numThresholdParam):
             numThreshPixels = np.sum(freq[binCenters > binCenters[iThreshold]])
-            den2 = np.sqrt((((numAllPixels - numThreshPixels) * (numThreshPixels)) / numAllPixels))
+            den2 = np.sqrt(
+                (((numAllPixels - numThreshPixels) * (numThreshPixels)) / numAllPixels)
+            )
             if den2 == 0:
-                covarMat[iThreshold] = 0  # dont want to select these, also want to avoid nans
+                covarMat[iThreshold] = (
+                    0  # dont want to select these, also want to avoid nans
+                )
             else:
-                covarMat[iThreshold] = (binCenters @ (freq * (binCenters > binCenters[iThreshold])).T) / (
-                            den1 * den2)  # i hope this is the right mix of matrix multiplication and element-wise stuff.
+                covarMat[iThreshold] = (
+                    (binCenters @ (freq * (binCenters > binCenters[iThreshold])).T)
+                    / (den1 * den2)
+                )  # i hope this is the right mix of matrix multiplication and element-wise stuff.
         imThreshold = np.argmax(covarMat)  # index makes sense here.
         imThreshold = binCenters[imThreshold] + meanIntensity
         return imThreshold
+
     # end getImageThreshold
 
     @staticmethod
     def getImageWithSVMVOverlay(IM, param, type):
         """Add an overlay grid to the image IM showing supervoxels or megavoxels."""
-        if type == 'SV':
-            IM[range(0,IM.shape[0],param.tileX), :,:] = (0.7, 0.7, 0.7, 1.0)
-            IM[:, range(0,IM.shape[1], param.tileY),:] = (0.7, 0.7, 0.7, 1.0)
-            if IM.shape[0]>500 or IM.shape[1]>500:
-                IM[range(1,IM.shape[0],param.tileX), :,:] = (0.7, 0.7, 0.7, 1.0)
-                IM[:, range(1,IM.shape[1], param.tileY),:] = (0.7, 0.7, 0.7, 1.0)
-        else:
-            IM[range(0,IM.shape[0],param.tileX* param.megaVoxelTileX), :,:] = (1.0, 1.0, 1.0, 1.0)
-            IM[:, range(0,IM.shape[1],param.tileY* param.megaVoxelTileY),:] = (1.0, 1.0, 1.0, 1.0)
+        if type == "SV":
+            IM[range(0, IM.shape[0], param.tileX), :, :] = (0.7, 0.7, 0.7, 1.0)
+            IM[:, range(0, IM.shape[1], param.tileY), :] = (0.7, 0.7, 0.7, 1.0)
             if IM.shape[0] > 500 or IM.shape[1] > 500:
-                IM[range(1,IM.shape[0],param.tileX* param.megaVoxelTileX), :,:] = (1.0, 1.0, 1.0, 1.0)
-                IM[:, range(1,IM.shape[1],param.tileY*param.megaVoxelTileY),:] = (1.0, 1.0, 1.0, 1.0)
+                IM[range(1, IM.shape[0], param.tileX), :, :] = (0.7, 0.7, 0.7, 1.0)
+                IM[:, range(1, IM.shape[1], param.tileY), :] = (0.7, 0.7, 0.7, 1.0)
+        else:
+            IM[range(0, IM.shape[0], param.tileX * param.megaVoxelTileX), :, :] = (
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+            )
+            IM[:, range(0, IM.shape[1], param.tileY * param.megaVoxelTileY), :] = (
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+            )
+            if IM.shape[0] > 500 or IM.shape[1] > 500:
+                IM[range(1, IM.shape[0], param.tileX * param.megaVoxelTileX), :, :] = (
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                )
+                IM[:, range(1, IM.shape[1], param.tileY * param.megaVoxelTileY), :] = (
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                )
         return IM
+
     # end getImageWithSVMVOverlay
+
+
 # end DataFunctions
+
 
 # error classes
 class MissingChannelStackError(Exception):
     pass
+
 
 def test_directoryExists():
     """A set of tests of the static method directoryExists."""
@@ -307,27 +375,42 @@ def test_directoryExists():
     tnum = 1
     inVal1 = 5
     try:
-        print(failure+str(tnum) if DataFunctions.directoryExists(inVal1) else failure+str(tnum))
+        print(
+            failure + str(tnum)
+            if DataFunctions.directoryExists(inVal1)
+            else failure + str(tnum)
+        )
     except TypeError:
-        print(success+str(tnum))
+        print(success + str(tnum))
 
     # Test 2
     tnum = 2
     # Only works on Windows
     inVal2 = "C://Windows//System32"
     try:
-        print(success+str(tnum) if DataFunctions.directoryExists(inVal2) else failure+str(tnum))
+        print(
+            success + str(tnum)
+            if DataFunctions.directoryExists(inVal2)
+            else failure + str(tnum)
+        )
     except TypeError:
-        print(failure+str(tnum))
+        print(failure + str(tnum))
 
     # Test 3
     tnum = 3
     inVal3 = "C://nowhere_but_here"
     try:
-        print(failure+str(tnum) if DataFunctions.directoryExists(inVal3) else success+str(tnum))
+        print(
+            failure + str(tnum)
+            if DataFunctions.directoryExists(inVal3)
+            else success + str(tnum)
+        )
     except TypeError:
-        print(failure+str(tnum))
+        print(failure + str(tnum))
+
+
 # end test_directoryExists
+
 
 def test_parseAndCompareRegex():
     """A set of tests of the static method parseAndCompareRegex."""
@@ -335,15 +418,17 @@ def test_parseAndCompareRegex():
     failure = "Failure in test_parseAndCompareRegex test "
     # Test 1
     tnum = 1
-    t1expected = {'Well': 'r03c19', 'Field': '01', 'Stack': '15', 'Channel': '2'}
+    t1expected = {"Well": "r03c19", "Field": "01", "Stack": "15", "Channel": "2"}
     t1file = "r03c19f01p15-ch2sk1fk1fl1.tiff"
     t1regex = "(?<Well>\w+)f(?<Field>\d+)p(?<Stack>\d+)-ch(?<Channel>\d).*.tif(f)?"
     t1regex = DataFunctions.regexPatternCompatibility(t1regex)
     t1out = DataFunctions.parseAndCompareRegex(t1file, t1regex)
     print(success + str(tnum) if t1out == t1expected else failure + str(tnum))
+
+
 # end test_parseAndCompareRegex
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     """Tests of the static methods that can be run directly."""
     test_directoryExists()
     test_parseAndCompareRegex()

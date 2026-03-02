@@ -16,175 +16,298 @@
 
 import umap
 from sklearn.manifold import TSNE
-from sklearn.decomposition import PCA, KernelPCA
+from sklearn.decomposition import KernelPCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics.pairwise import pairwise_distances
 from scipy.spatial.distance import cdist
 import sklearn.metrics as met
 import numpy as np
 import matplotlib
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 import pandas as pd
+
 try:
     from ..GUI.windows.helperclasses import *
 except ImportError:
     from src.GUI.windows.helperclasses import *
 
+
 class setcluster(object):
     """Manually enter cluster number."""
+
     def __init__(self, clusternum, datafilt, plot_data, labels, group):
         """Construct GUI window to set the number of clusters."""
         self.clust = clusternum
-        #main layout
+        # main layout
         win = QDialog()
         win.setWindowTitle("Set Number of Clusters")
         win.setLayout(QFormLayout())
-        label = QLabel("Enter number of clusters to try. \nNote: Final cluster total after analysis may be different")
+        label = QLabel(
+            "Enter number of clusters to try. \nNote: Final cluster total after analysis may be different"
+        )
         clusterset = QSpinBox()
         btn_close = QPushButton("Cancel")
         btn_ok = QPushButton("OK")
-        #set spinbox value. Trailing position cursor
+        # set spinbox value. Trailing position cursor
         if isinstance(clusternum, type(None)) == False:
             clusterset.setValue(clusternum)
             clusterset.lineEdit().setCursorPosition(len(str(clusterset.value())))
         else:
             clusterset.setValue(0)
             clusterset.lineEdit().setCursorPosition(1)
-        #Add widgets and callbacks
+        # Add widgets and callbacks
         win.layout().addRow(label, clusterset)
-        if group == "Treatment" and len(np.unique(labels))>1:
-            labelc1 = QLabel('Mutual information: N\A')
-            labelc2 = QLabel('Normalized mutual information: N\A')
-            labelc3 = QLabel('Adjusted mutual information: N\A')
+        if group == "Treatment" and len(np.unique(labels)) > 1:
+            labelc1 = QLabel("Mutual information: N\\A")
+            labelc2 = QLabel("Normalized mutual information: N\\A")
+            labelc3 = QLabel("Adjusted mutual information: N\\A")
             win.layout().addRow(labelc1)
             win.layout().addRow(labelc2)
             win.layout().addRow(labelc3)
         win.layout().addRow(btn_close, btn_ok)
         btn_ok.clicked.connect(
-            lambda: self.confirmed_cluster(win, clusterset, datafilt, clusterset.value(),
-                plot_data, labels, labelc1, labelc2, labelc3, group)
-                if group=="Treatment" and len(np.unique(labels))>1
-                else self.confirmed_cluster(win, clusterset, datafilt, clusterset.value(),
-                    plot_data, labels, None, None, None, group))
+            lambda: (
+                self.confirmed_cluster(
+                    win,
+                    clusterset,
+                    datafilt,
+                    clusterset.value(),
+                    plot_data,
+                    labels,
+                    labelc1,
+                    labelc2,
+                    labelc3,
+                    group,
+                )
+                if group == "Treatment" and len(np.unique(labels)) > 1
+                else self.confirmed_cluster(
+                    win,
+                    clusterset,
+                    datafilt,
+                    clusterset.value(),
+                    plot_data,
+                    labels,
+                    None,
+                    None,
+                    None,
+                    group,
+                )
+            )
+        )
         btn_close.clicked.connect(lambda: win.close())
         win.show()
-        win.setWindowFlags(win.windowFlags() | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowStaysOnTopHint)
+        win.setWindowFlags(
+            win.windowFlags()
+            | Qt.WindowType.CustomizeWindowHint
+            | Qt.WindowType.WindowStaysOnTopHint
+        )
         win.exec()
+
     # end constructor
 
     def confirmed_cluster(
-            self, win, num, datafilt, numclusters, plot_data,
-            labels, labelc1, labelc2, labelc3, group):
+        self,
+        win,
+        num,
+        datafilt,
+        numclusters,
+        plot_data,
+        labels,
+        labelc1,
+        labelc2,
+        labelc3,
+        group,
+    ):
         """Return number of clusters.
 
         If current colorby is "Treatment" displays mutual information.
         """
-        if num.value()>0:
-            self.clust=num.value()
-            if group=="Treatment" and len(np.unique(labels))>1:
-                clusters, counts, idx =Clustering().computeClustering(
-                    datafilt, numclusters, np.array(list(zip(plot_data[0], plot_data[1]))))
+        if num.value() > 0:
+            self.clust = num.value()
+            if group == "Treatment" and len(np.unique(labels)) > 1:
+                clusters, counts, idx = Clustering().computeClustering(
+                    datafilt,
+                    numclusters,
+                    np.array(list(zip(plot_data[0], plot_data[1]))),
+                )
                 treatlabels = np.zeros(labels.shape)
                 for i, t in enumerate(labels):
                     treatlabels[labels == t] = i + 1
-                labelc1.setText('Mutual information: '
-                    + str(met.mutual_info_score(treatlabels, idx, )))
-                labelc2.setText('Normalized mutual information: '
-                    + str(met.normalized_mutual_info_score(treatlabels, idx)))
-                labelc3.setText('Adjusted mutual information: '
-                    + str(met.normalized_mutual_info_score(treatlabels, idx)))
+                labelc1.setText(
+                    "Mutual information: "
+                    + str(
+                        met.mutual_info_score(
+                            treatlabels,
+                            idx,
+                        )
+                    )
+                )
+                labelc2.setText(
+                    "Normalized mutual information: "
+                    + str(met.normalized_mutual_info_score(treatlabels, idx))
+                )
+                labelc3.setText(
+                    "Adjusted mutual information: "
+                    + str(met.normalized_mutual_info_score(treatlabels, idx))
+                )
             win.close()
         else:
             errorWindow("Cluster Error", "Number of Clusters must be a positive value")
+
     # end confirmed_cluster
+
+
 # end setcluster
+
 
 class export_cluster(object):
     """Export clusters"""
+
     def __init__(self, plot_data, datafilt, numclusters, featurefile):
         """Construct GUI window to export the clusters."""
-        if numclusters!=None:
-            name = QFileDialog.getSaveFileName(None, 'Save File', filter='.txt')
-            if name[0]!= '':
-                #get clusters/locations
+        if numclusters != None:
+            name = QFileDialog.getSaveFileName(None, "Save File", filter=".txt")
+            if name[0] != "":
+                # get clusters/locations
                 clusters, count, idx = Clustering().computeClustering(
-                    datafilt, numclusters, np.array(list(zip(plot_data[0], plot_data[1]))))
-                #get info from feature/metadatafile
-                cols = list(pd.read_csv(featurefile, nrows=1, sep='\t'))
-                cols=list(filter(lambda col: (col[:2]!='MV' and col!='bounds' and col!='intensity_thresholds'), cols))
-                data=pd.read_csv(featurefile, sep='\t', na_values='NaN')
+                    datafilt,
+                    numclusters,
+                    np.array(list(zip(plot_data[0], plot_data[1]))),
+                )
+                # get info from feature/metadatafile
+                cols = list(pd.read_csv(featurefile, nrows=1, sep="\t"))
+                cols = list(
+                    filter(
+                        lambda col: (
+                            col[:2] != "MV"
+                            and col != "bounds"
+                            and col != "intensity_thresholds"
+                        ),
+                        cols,
+                    )
+                )
+                data = pd.read_csv(featurefile, sep="\t", na_values="NaN")
 
-                if 'Treatment' in cols:
-                    if data['Treatment'].isnull().all():
-                        data.drop(columns=['Treatment'], axis=1, inplace=True)
-                        cols.remove('Treatment')
+                if "Treatment" in cols:
+                    if data["Treatment"].isnull().all():
+                        data.drop(columns=["Treatment"], axis=1, inplace=True)
+                        cols.remove("Treatment")
                 data.dropna(axis=0, inplace=True)
-                data=data[cols]
-                cols = list(pd.read_csv(
-                    data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0],
-                    nrows=1, sep='\t'))
-                if 'Stack' in cols:
-                    stack=[]
+                data = data[cols]
+                cols = list(
+                    pd.read_csv(
+                        data["MetadataFile"]
+                        .str.replace(r"\\", "/", regex=True)
+                        .iloc[0],
+                        nrows=1,
+                        sep="\t",
+                    )
+                )
+                if "Stack" in cols:
+                    stack = []
                     metadata = pd.read_csv(
-                        data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0],
-                        usecols= ['Stack', 'ImageID'], sep="\t",na_values='NaN')
-                    for ind in np.unique(data['ImageID'].to_numpy()):
-                        idstack=metadata['Stack'].loc[metadata['ImageID'] == ind]
-                        if idstack.min()!=idstack.max():
-                            stack.append("".join(('Stacks: ',str(idstack.min()),'-', str(idstack.max()))))
+                        data["MetadataFile"]
+                        .str.replace(r"\\", "/", regex=True)
+                        .iloc[0],
+                        usecols=["Stack", "ImageID"],
+                        sep="\t",
+                        na_values="NaN",
+                    )
+                    for ind in np.unique(data["ImageID"].to_numpy()):
+                        idstack = metadata["Stack"].loc[metadata["ImageID"] == ind]
+                        if idstack.min() != idstack.max():
+                            stack.append(
+                                "".join(
+                                    (
+                                        "Stacks: ",
+                                        str(idstack.min()),
+                                        "-",
+                                        str(idstack.max()),
+                                    )
+                                )
+                            )
                         else:
                             stack.append(str(idstack.min()))
-                    data.rename(columns={'Stack': 'Stacks'}, inplace = True)
-                    data['Stacks']=stack
+                    data.rename(columns={"Stack": "Stacks"}, inplace=True)
+                    data["Stacks"] = stack
                 try:
-                    data['Cluster Assignment'] = idx
-                    #export cluster info + feature/metadatafile info
-                    data.to_csv("".join(name), sep='\t', mode='w', index=False)
+                    data["Cluster Assignment"] = idx
+                    # export cluster info + feature/metadatafile info
+                    data.to_csv("".join(name), sep="\t", mode="w", index=False)
                 except Exception as ex:
-                    errorWindow('Cluster Export',
-                        "Check Validity of Metadata and Feature File. \n Python Exception: {}".format(ex))
+                    errorWindow(
+                        "Cluster Export",
+                        "Check Validity of Metadata and Feature File. \n Python Exception: {}".format(
+                            ex
+                        ),
+                    )
         else:
-            errorWindow("Export Error",
-                "Please 'Set Number of Clusters' before using Export Cluster Results")
+            errorWindow(
+                "Export Error",
+                "Please 'Set Number of Clusters' before using Export Cluster Results",
+            )
         # end constructor
+
+
 # end export_cluster
+
 
 class piechart(object):
     """Show clusters and piechart percentage of labels."""
+
     def __init__(self, plot_data, datafilt, numclusters, labels, colors):
         """Construct a GUI window to show pie charts of cluster compositions."""
         if isinstance(numclusters, int):
             win = QDialog()
             win.setWindowTitle("Piechart")
             win.setLayout(QGridLayout())
-            #clusters and centers
-            clusters, count, idx=Clustering().computeClustering(
-                datafilt, numclusters, np.array(list(zip(plot_data[0], plot_data[1]))))
-            groups=np.unique(labels)
-            self.max_piesize=3000 # maximum matplotlib piechart size.
-            self.main_plot = MplCanvas(self, width=10, height=10, dpi=100, projection="2d")
-            #plot cluster centers and connect line to data points
+            # clusters and centers
+            clusters, count, idx = Clustering().computeClustering(
+                datafilt, numclusters, np.array(list(zip(plot_data[0], plot_data[1])))
+            )
+            groups = np.unique(labels)
+            self.max_piesize = 3000  # maximum matplotlib piechart size.
+            self.main_plot = MplCanvas(
+                self, width=10, height=10, dpi=100, projection="2d"
+            )
+            # plot cluster centers and connect line to data points
             for i in np.unique(idx):
-                ind=np.where(idx==i)
-                self.main_plot.axes.plot(plot_data[0][ind], plot_data[1][ind], 'ok', alpha=self.pie_chart_dot_alpha)
+                ind = np.where(idx == i)
+                self.main_plot.axes.plot(
+                    plot_data[0][ind],
+                    plot_data[1][ind],
+                    "ok",
+                    alpha=self.pie_chart_dot_alpha,
+                )
                 for x in ind[0]:
                     self.main_plot.axes.plot(
                         [plot_data[0][x], plot_data[0][i]],
-                        [plot_data[1][x], plot_data[1][i]], 'k-', alpha=self.pie_chart_line_alpha)
+                        [plot_data[1][x], plot_data[1][i]],
+                        "k-",
+                        alpha=self.pie_chart_line_alpha,
+                    )
             # pie radius norm
-            axisRange = abs(np.max(plot_data[0]) - np.min(plot_data[0]));
-            maxRadius = .06 * axisRange
-            minRadius = .03 * axisRange
-            rsize=count
+            axisRange = abs(np.max(plot_data[0]) - np.min(plot_data[0]))
+            maxRadius = 0.06 * axisRange
+            minRadius = 0.03 * axisRange
+            rsize = count
             if min(rsize) != max(rsize):
-                rsize = (np.array(rsize) - min(rsize))/ (max(rsize) - min(rsize));
-                rsize = (maxRadius - minRadius) * rsize + minRadius;
+                rsize = (np.array(rsize) - min(rsize)) / (max(rsize) - min(rsize))
+                rsize = (maxRadius - minRadius) * rsize + minRadius
             else:
-                rsize=np.ones(len(count))
-            cluster_percent=[np.array([np.count_nonzero(
-                labels[np.where(idx == i)[0].astype(int)]==trt)/np.count_nonzero(idx==i)
-                    for trt in groups]) for i in clusters]
+                rsize = np.ones(len(count))
+            cluster_percent = [
+                np.array(
+                    [
+                        np.count_nonzero(
+                            labels[np.where(idx == i)[0].astype(int)] == trt
+                        )
+                        / np.count_nonzero(idx == i)
+                        for trt in groups
+                    ]
+                )
+                for i in clusters
+            ]
 
             def pie_slice(prev_ratio, cur_ratio):
                 """Pie divisions
@@ -195,19 +318,27 @@ class piechart(object):
                 y1 = np.sin(2 * np.pi * np.linspace(prev_ratio, cur_ratio))
                 xy1 = np.row_stack([[0, 0], np.column_stack([x1, y1])])
                 s1 = np.abs(xy1).max()
-                return(s1, xy1)
+                return (s1, xy1)
+
             # end pie_slice
 
-            #plot pie slices per cluster
-            for pt, cluster, size_ind in zip(cluster_percent, clusters, range(len(clusters))):
-                parts_ind=np.nonzero(pt)
-                parts=np.array(pt[parts_ind[0].astype(int)])
+            # plot pie slices per cluster
+            for pt, cluster, size_ind in zip(
+                cluster_percent, clusters, range(len(clusters))
+            ):
+                parts_ind = np.nonzero(pt)
+                parts = np.array(pt[parts_ind[0].astype(int)])
                 for x in range(len(parts)):
-                    s1, mark = pie_slice(sum(parts[:x]), sum(parts[:x+1]))
+                    s1, mark = pie_slice(sum(parts[:x]), sum(parts[: x + 1]))
                     self.main_plot.axes.scatter(
-                        plot_data[0][cluster], plot_data[1][cluster],
-                        marker=mark, s=s1**2 * self.max_piesize*rsize[size_ind], alpha=self.pie_chart_wedge_alpha,
-                        facecolor=colors[parts_ind[0][x]], zorder=4)
+                        plot_data[0][cluster],
+                        plot_data[1][cluster],
+                        marker=mark,
+                        s=s1**2 * self.max_piesize * rsize[size_ind],
+                        alpha=self.pie_chart_wedge_alpha,
+                        facecolor=colors[parts_ind[0][x]],
+                        zorder=4,
+                    )
 
                 # Add an offset to the text position so it is not in the middle of the pie chart
                 # If r_offset is set to rsize[size_ind], the centre of the text
@@ -215,30 +346,48 @@ class piechart(object):
                 # is arbitrary and not based on the text box properties, but at least it is
                 # not a hardcoded value.
                 r_offset = rsize[size_ind] + minRadius
-                x_offset = r_offset * np.cos(np.pi/4.0)
-                y_offset = r_offset * np.sin(np.pi/4.0)
+                x_offset = r_offset * np.cos(np.pi / 4.0)
+                y_offset = r_offset * np.sin(np.pi / 4.0)
 
                 # Annotate and the draggable() attribute allow the user to move the numbers
-                self.main_plot.axes.annotate(str(size_ind + 1), xy=(plot_data[0][cluster], plot_data[1][cluster]),
-                     xycoords='axes fraction',
-                     xytext=(plot_data[0][cluster] + x_offset, plot_data[1][cluster] + y_offset), textcoords='data',
-                     ha="center", va="center", fontsize=15, fontweight='bold', color="black",
-                     bbox=dict(edgecolor="None", facecolor="None", alpha=self.pie_chart_text_alpha),
-                     zorder=5).draggable()
+                self.main_plot.axes.annotate(
+                    str(size_ind + 1),
+                    xy=(plot_data[0][cluster], plot_data[1][cluster]),
+                    xycoords="axes fraction",
+                    xytext=(
+                        plot_data[0][cluster] + x_offset,
+                        plot_data[1][cluster] + y_offset,
+                    ),
+                    textcoords="data",
+                    ha="center",
+                    va="center",
+                    fontsize=15,
+                    fontweight="bold",
+                    color="black",
+                    bbox=dict(
+                        edgecolor="None",
+                        facecolor="None",
+                        alpha=self.pie_chart_text_alpha,
+                    ),
+                    zorder=5,
+                ).draggable()
 
-            self.main_plot.axes.set_aspect('equal')
+            self.main_plot.axes.set_aspect("equal")
             self.main_plot.fig.tight_layout()
-            self.main_plot.axes.axis('off')
+            self.main_plot.axes.axis("off")
             self.main_plot.draw()
-            #window widgets
+            # window widgets
             toolbar = NavigationToolbar(self.main_plot, win)
             win.layout().addWidget(toolbar, 0, 0, 1, 1)
             win.layout().addWidget(self.main_plot, 1, 0, 2, 2)
             win.show()
             win.exec()
         else:
-            errorWindow("PieChart Error",
-                "Please 'Set Number of Clusters' before using Piechart")
+            errorWindow(
+                "PieChart Error",
+                "Please 'Set Number of Clusters' before using Piechart",
+            )
+
     # end constructor
 
     # Member constants
@@ -246,19 +395,23 @@ class piechart(object):
     pie_chart_text_alpha = 1.0
     pie_chart_dot_alpha = 0.0
     pie_chart_line_alpha = 0.2
+
+
 # end piechart
+
 
 class clusterdisplay(object):
     """Cluster line plots."""
+
     def __init__(self, x, y, xp, yp, win_title, xlabel, ylabel, opt_label, text, plot):
         """Construct main GUI layout for clustering display."""
         win = QDialog()
         win.setWindowTitle(win_title)
         win.setLayout(QGridLayout())
         self.main_plot = MplCanvas(self, width=10, height=10, dpi=100, projection="2d")
-        #apcluster monitoring iterations
-        if plot==0:
-            self.main_plot.axes.plot(x, y, 'r--')
+        # apcluster monitoring iterations
+        if plot == 0:
+            self.main_plot.axes.plot(x, y, "r--")
             # axis/title labels
             self.main_plot.axes.set_title(win_title)
             self.main_plot.axes.set_xlabel(xlabel)
@@ -267,10 +420,10 @@ class clusterdisplay(object):
             timer = QTimer()
             timer.timeout.connect(lambda: win.close())
             timer.start(2000)
-        #estimation plot
+        # estimation plot
         else:
-            self.main_plot.axes.plot(x, y, '-r', label='# Clusters')
-            self.main_plot.axes.plot(xp, yp, 'bo', label='Optimal Cluster')
+            self.main_plot.axes.plot(x, y, "-r", label="# Clusters")
+            self.main_plot.axes.plot(xp, yp, "bo", label="Optimal Cluster")
             # axis/title labels
             self.main_plot.axes.set_title(win_title)
             self.main_plot.axes.set_xlabel(xlabel)
@@ -278,21 +431,29 @@ class clusterdisplay(object):
             self.main_plot.axes.text(text[0], text[1], text[2])
             self.main_plot.axes.legend()
         self.main_plot.draw()
-        #add widgets
+        # add widgets
         toolbar = NavigationToolbar(self.main_plot, win)
         win.layout().addWidget(toolbar)
         win.layout().addWidget(self.main_plot)
         win.show()
         win.exec()
+
     # end constructor
+
+
 # end clusterdisplay
+
 
 class perplexity_set(object):
     def __init__(self, X):
         win = QDialog()
         win.setWindowTitle("Set Perplexity")
         win.setLayout(QFormLayout())
-        label = QLabel("Enter Perplexity (Recommended 5 - 50): \nNote: For current dataset max perplexity is {}".format(len(X) - 1))
+        label = QLabel(
+            "Enter Perplexity (Recommended 5 - 50): \nNote: For current dataset max perplexity is {}".format(
+                len(X) - 1
+            )
+        )
         perplexityset = QSpinBox()
         perplexityset.setMaximum(len(X) - 1)
         perplexityset.setValue(0)
@@ -301,68 +462,88 @@ class perplexity_set(object):
         btn_ok = QPushButton("Confirm")
         win.layout().addRow(label, perplexityset)
         win.layout().addRow(btn_ok)
-        btn_ok.clicked.connect(lambda: self.confirmed_perplexity(perplexityset.value(), win))
+        btn_ok.clicked.connect(
+            lambda: self.confirmed_perplexity(perplexityset.value(), win)
+        )
         win.setWindowFlag(Qt.WindowType.WindowCloseButtonHint, False)
         win.show()
-        win.setWindowFlags(win.windowFlags() | Qt.WindowType.CustomizeWindowHint | Qt.WindowType.WindowStaysOnTopHint)
+        win.setWindowFlags(
+            win.windowFlags()
+            | Qt.WindowType.CustomizeWindowHint
+            | Qt.WindowType.WindowStaysOnTopHint
+        )
         win.exec()
+
     # end constructor
 
     def confirmed_perplexity(self, perplexity, win):
-        if perplexity>0:
-            self.perplexity=perplexity
+        if perplexity > 0:
+            self.perplexity = perplexity
             win.close()
         else:
             errorWindow("Set Perplexity", "Perplexity must be greater than zero")
+
     # end confirmed_perplexity
+
+
 # end perplexity_set
+
 
 class Clustering:
     def __init__(self):
         self.eps = np.finfo(np.float64).eps
         self.realmin = np.finfo(np.float64).tiny
         self.realmax = np.finfo(np.float64).max
+
     # end constructor
 
     def plot_type(self, X, dim, plot):
         """Projection data calculation."""
         if plot == "PCA":
-            func = 'linear'
+            func = "linear"
             sc = StandardScaler()
             X_show = sc.fit_transform(X)
             pca = KernelPCA(n_components=dim, kernel=func)
             P = pca.fit(X_show).transform(X_show)
-            return (P)
+            return P
         elif plot == "t-SNE":
-            win_per=perplexity_set(X)
-            T = TSNE(n_components=dim, perplexity=win_per.perplexity, init='pca', learning_rate='auto').fit_transform(X)
-            return (T)
+            win_per = perplexity_set(X)
+            T = TSNE(
+                n_components=dim,
+                perplexity=win_per.perplexity,
+                init="pca",
+                learning_rate="auto",
+            ).fit_transform(X)
+            return T
         elif plot == "Sammon":
             S, E = self.sammon(self, X, dim)
-            return (S)
+            return S
         elif plot == "UMAP":
             sc = StandardScaler()
             X_show = sc.fit_transform(X)
-            reducer = umap.UMAP(n_components=dim, init='random')
+            reducer = umap.UMAP(n_components=dim, init="random")
             U = reducer.fit_transform(X_show)
-            return (U)
+            return U
         else:
             raise Exception("Invalid plot")
+
     # end plot_type
 
     def cluster_est(self, X):
         numclust = self.estimateNumClusters(self, X)
+
     # cluster_est
 
-    #cluster functions from Matlab - Python Translation
+    # cluster functions from Matlab - Python Translation
     """Static methods for cluster analysis. Referenced from
     https://github.com/DWALab/Phindr3D/tree/9b95aebbd2a62c41d3c87a36f1122a78a21019c8/Lib
     and
     https://github.com/SRI-RSST/Phindr3D-python/blob/ba588bc925ef72c72103738d17ea922d20771064/phindr_functions.py
     """
+
     @staticmethod
     def cmdscale(D):
-        """ copied from https://github.com/tompollard/sammon as no other python libraries appear to have implemented sammon mapping.
+        """copied from https://github.com/tompollard/sammon as no other python libraries appear to have implemented sammon mapping.
 
         Classical multidimensional scaling (MDS)
 
@@ -390,7 +571,7 @@ class Clustering:
         H = np.eye(n) - np.ones((n, n)) / n
 
         # YY^T
-        B = -H.dot(D ** 2).dot(H) / 2
+        B = -H.dot(D**2).dot(H) / 2
 
         # Diagonalize
         evals, evecs = np.linalg.eigh(B)
@@ -401,7 +582,7 @@ class Clustering:
         evecs = evecs[:, idx]
 
         # Compute the coordinates using positive-eigenvalued components only
-        w, = np.where(evals > 0)
+        (w,) = np.where(evals > 0)
         L = np.diag(np.sqrt(evals[w]))
         V = evecs[:, w]
         Y = V.dot(L)
@@ -424,8 +605,16 @@ class Clustering:
 
     @staticmethod
     def sammon(
-            self, x, n, display=0, inputdist='raw', maxhalves=20,
-            maxiter=500, tolfun=1e-9, init='default'):
+        self,
+        x,
+        n,
+        display=0,
+        inputdist="raw",
+        maxhalves=20,
+        maxiter=500,
+        tolfun=1e-9,
+        init="default",
+    ):
         """Perform Sammon mapping on dataset x.
 
         Copied from https://github.com/tompollard/sammon as no other
@@ -480,17 +669,19 @@ class Clustering:
 
         # Create distance matrix unless given by parameters
         if x.shape[0] > 10000:
-            raise ValueError("should be a memory error actually: input array too big, would cause memory error")
-        if inputdist == 'distance':
+            raise ValueError(
+                "should be a memory error actually: input array too big, would cause memory error"
+            )
+        if inputdist == "distance":
             D = x
-            if init == 'default':
-                init = 'cmdscale'
+            if init == "default":
+                init = "cmdscale"
         else:
             D = cdist(x, x)
-            if init == 'default':
-                init = 'pca'
+            if init == "default":
+                init = "pca"
 
-        if inputdist == 'distance' and init == 'pca':
+        if inputdist == "distance" and init == "pca":
             raise ValueError("Cannot use init == 'pca' when inputdist == 'distance'")
 
         if np.count_nonzero(np.diagonal(D)) > 0:
@@ -505,23 +696,22 @@ class Clustering:
             raise ValueError("Off-diagonal dissimilarities must be strictly positive")
 
         Dinv = 1 / D
-        if init == 'pca':
+        if init == "pca":
             [UU, DD, _] = np.linalg.svd(x)
             y = UU[:, :n] * DD[:n]
-        elif init == 'cmdscale':
+        elif init == "cmdscale":
             y, e = self.cmdscale(D)
             y = y[:, :n]
         else:
             y = np.random.normal(0.0, 1.0, [N, n])
         one = np.ones([N, n])
         d = cdist(y, y) + np.eye(N)
-        dinv = 1. / d
+        dinv = 1.0 / d
         delta = D - d
-        E = ((delta ** 2) * Dinv).sum()
+        E = ((delta**2) * Dinv).sum()
 
         # Get on with it
         for i in range(maxiter):
-
             # Compute gradient, Hessian and search direction (note it is actually
             # 1/4 of the gradient and Hessian, but the step size is just the ratio
             # of the gradient and the diagonal of the Hessian so it doesn't
@@ -529,20 +719,25 @@ class Clustering:
             delta = dinv - Dinv
             deltaone = np.dot(delta, one)
             g = np.dot(delta, y) - (y * deltaone)
-            dinv3 = dinv ** 3
-            y2 = y ** 2
-            H = np.dot(dinv3, y2) - deltaone - np.dot(2, y) * np.dot(dinv3, y) + y2 * np.dot(dinv3, one)
-            s = -g.flatten(order='F') / np.abs(H.flatten(order='F'))
+            dinv3 = dinv**3
+            y2 = y**2
+            H = (
+                np.dot(dinv3, y2)
+                - deltaone
+                - np.dot(2, y) * np.dot(dinv3, y)
+                + y2 * np.dot(dinv3, one)
+            )
+            s = -g.flatten(order="F") / np.abs(H.flatten(order="F"))
             y_old = y
 
             # Use step-halving procedure to ensure progress is made
             for j in range(maxhalves):
-                s_reshape = np.reshape(s, (-1, n), order='F')
+                s_reshape = np.reshape(s, (-1, n), order="F")
                 y = y_old + s_reshape
                 d = cdist(y, y) + np.eye(N)
                 dinv = 1 / d
                 delta = D - d
-                E_new = ((delta ** 2) * Dinv).sum()
+                E_new = ((delta**2) * Dinv).sum()
                 if E_new < E:
                     break
                 else:
@@ -556,13 +751,13 @@ class Clustering:
             # Evaluate termination criterion
             if abs((E - E_new) / E) < tolfun:
                 if display:
-                    raise ValueError('TolFun exceeded: Optimisation terminated')
+                    raise ValueError("TolFun exceeded: Optimisation terminated")
                 break
 
             # Report progress
             E = E_new
             # if display > 1:
-                # print('epoch = %d : E = %12.10f' % (i + 1, E * scale))
+            # print('epoch = %d : E = %12.10f' % (i + 1, E * scale))
 
         # if i == maxiter - 1:
         #     print('Warning: maxiter exceeded. Sammon mapping may not have converged...')
@@ -574,6 +769,7 @@ class Clustering:
 
     class C_class:
         """A data structure used in the clsIn function."""
+
         def __init__(self):
             self.minClsSize = 5
             self.maxCls = 10
@@ -584,7 +780,7 @@ class Clustering:
             self.pmed = 0
 
     @staticmethod
-    def preferenceRange(self, s, method='bound'):
+    def preferenceRange(self, s, method="bound"):
         """Computes a lower bound, pmin, and the exact value of the preference, pmax.
 
         Called in clsIn in third party/clustering folder
@@ -650,57 +846,77 @@ class Clustering:
         k11 = np.argmax(np.sum(S, axis=0))
         if dpsim1 == -np.inf:
             pmin = np.nan
-        elif method == 'bound':
+        elif method == "bound":
             for k in range(N):
                 S[k, k] = -np.inf
             m = np.max(S, axis=1)
             tmp = np.sum(m, axis=0)
             yy = np.min(m, axis=0)
             ii = np.argmin(m, axis=0)
-            tmp = tmp - yy - np.min(np.concatenate((m[:ii], m[ii + 1:N])))
+            tmp = tmp - yy - np.min(np.concatenate((m[:ii], m[ii + 1 : N])))
             pmin = dpsim1 - tmp
-        elif method == 'exact':
+        elif method == "exact":
             dpsim2 = -np.inf
             for j21 in range(N - 1):
                 for j22 in range(j21, N):
-                    tmp = np.sum(np.max(S[:, (j21, j22)]), axis=1)  # poor indexing. probably wont work
+                    tmp = np.sum(
+                        np.max(S[:, (j21, j22)]), axis=1
+                    )  # poor indexing. probably wont work
                     if tmp > dpsim2:
                         dpsim2 = tmp
                         k21 = j21
                         k22 = j22
             pmin = dpsim1 - dpsim2
         else:
-            raise ValueError('Error: please properly specify method from "bound" or "exact"\n')
+            raise ValueError(
+                'Error: please properly specify method from "bound" or "exact"\n'
+            )
         # find pmax
         for k in range(N):
             S[k, k] = -np.inf
             pmax = np.max(S)
         return pmin, pmax
+
     # end
 
     def computeClustering(
-            self, data, numberClusters, projection_data, type='AP', sparse=False,
-            maxits=500, convits=15, dampfact=0.5,
-            plot=False, details=False, nonoise=False):
+        self,
+        data,
+        numberClusters,
+        projection_data,
+        type="AP",
+        sparse=False,
+        maxits=500,
+        convits=15,
+        dampfact=0.5,
+        plot=False,
+        details=False,
+        nonoise=False,
+    ):
         """Compute data clusters for the given input parameters.
 
         computeClustering.m
         """
-        percent_dev = 1  # percentage by which final number of clusters may deviate from Nclusters
+        percent_dev = (
+            1  # percentage by which final number of clusters may deviate from Nclusters
+        )
         type = type.upper()
-        C = self.clsIn(self,data)
-        if type == 'AP':
-            idx, netsim, dpsim, expref, pref = self.apclusterK(self,C.S, numberClusters, prc=percent_dev)
+        C = self.clsIn(self, data)
+        if type == "AP":
+            idx, netsim, dpsim, expref, pref = self.apclusterK(
+                self, C.S, numberClusters, prc=percent_dev
+            )
             clusters, counts = np.unique(idx, return_counts=True)
             # for i in range(len(clusters)):
             #     print(f'cluster{i + 1}: {counts[i]} counts')
         else:
             clusterResult = np.arange(0, data.shape[0])
         return (clusters, counts, idx)
+
     # end computeClustering
 
     @staticmethod
-    def clsIn(self, data, beta=0.05, dis='euclidean'):
+    def clsIn(self, data, beta=0.05, dis="euclidean"):
         """Parameter dis can be: 'euclidean' OR 'cosine' OR 'hamming'."""
         dis = dis.lower()
         if data.size == 0:  # check if data is empty array
@@ -714,15 +930,18 @@ class Clustering:
         C.pmin = 0
         C.pmax = 0
         C.pmed = 0
-        sim=pairwise_distances(data, data, metric='euclidean')
-        #sim = sc.spatial.distance.cdist(data, data, metric=dis)
-        if dis == 'euclidean':
+        sim = pairwise_distances(data, data, metric="euclidean")
+        # sim = sc.spatial.distance.cdist(data, data, metric=dis)
+        if dis == "euclidean":
             sim = -1 * sim
-        elif (dis == 'cosine') or (sim == 'hamming'):
+        elif (dis == "cosine") or (sim == "hamming"):
             sim = 1 - sim
-        x_x = np.tril(np.ones((sim.shape[0], sim.shape[0]), dtype=bool),
-                      -1)  # lower triangular matrix True below the diagonal, false elsewhere.
-        C.pmed = np.median(sim[x_x])  # i think this is the right axis, but very unsure. Should be median along rows of 2d matrix since sim[x_x] is 2d matrix however, numpy rows and cols are different than in matlab.
+        x_x = np.tril(
+            np.ones((sim.shape[0], sim.shape[0]), dtype=bool), -1
+        )  # lower triangular matrix True below the diagonal, false elsewhere.
+        C.pmed = np.median(
+            sim[x_x]
+        )  # i think this is the right axis, but very unsure. Should be median along rows of 2d matrix since sim[x_x] is 2d matrix however, numpy rows and cols are different than in matlab.
         C.pmin, C.pmax = self.preferenceRange(self, sim)
         C.S = sim  # similarity matrix
         return C
@@ -730,8 +949,18 @@ class Clustering:
     # https://www.mathworks.com/matlabcentral/mlc-downloads/downloads/submissions/14620/versions/4/previews/apcluster.m/index.html
     # https://www.mathworks.com/matlabcentral/fileexchange/25722-fast-affinity-propagation-clustering-under-given-number-of-clusters?tab=discussions
     @staticmethod
-    def apcluster(self, s, p, sparse=False, maxits=500, convits=50,
-            dampfact=0.5, plot=False, details=False, nonoise=False):
+    def apcluster(
+        self,
+        s,
+        p,
+        sparse=False,
+        maxits=500,
+        convits=50,
+        dampfact=0.5,
+        plot=False,
+        details=False,
+        nonoise=False,
+    ):
         """Identify data clusters using affinity propagation.
 
         in third party/clustering
@@ -748,7 +977,7 @@ class Clustering:
         constant for convits iterations (default of 50). The command
         apcluster(s,p,'plot') can be used to plot the net similarity
         during operation of the algorithm.
-        
+
         For N data points, there may be as many as N^2-N pair-wise
         similarities (note that the similarity of data point i to k
         need not be equal to the similarity of data point k to i).
@@ -760,21 +989,21 @@ class Clustering:
         matrix s, where each row of s contains a pair of data point
         indices and a corresponding similarity value: s(j,3) is the
         similarity of data point s(j,1) to data point s(j,2).
-        
+
         APCLUSTER automatically determines the number of clusters,
         based on the input p, which is an Nx1 matrix of real numbers
         called preferences. p(i) indicates the preference that data
-        point i be chosen as a cluster center. A good choice is to 
+        point i be chosen as a cluster center. A good choice is to
         set all preference values to the median of the similarity
         values. The number of identified clusters can be increased or
         decreased  by changing this value accordingly. If p is a
         scalar, APCLUSTER assumes all preferences are equal to p.
-        
+
         The fitness function (net similarity) used to search for
         solutions equals the sum of the preferences of the the data
         centers plus the sum of the similarities of the other data
         points to their data centers.
-        
+
         The identified cluster centers and the assignments of other
         data points to these centers are returned in idx. idx(j) is
         the index of the data point that is the cluster center for
@@ -784,9 +1013,9 @@ class Clustering:
         sum of the preferences of the identified cluster centers is
         returned in expref and the net similarity (sum of the data
         point similarities and preferences) is returned in netsim.
-        
+
         EXAMPLE
-        
+
         N=100; x=rand(N,2); % Create N, 2-D data points
         M=N*N-N; s=zeros(M,3); % Make ALL N^2-N similarities
         j=1;
@@ -804,18 +1033,18 @@ class Clustering:
         for i=unique(idx)'
           ii=find(idx==i); h=plot(x(ii,1),x(ii,2),'o'); hold on;
           col=rand(1,3); set(h,'Color',col,'MarkerFaceColor',col);
-          xi1=x(i,1)*ones(size(ii)); xi2=x(i,2)*ones(size(ii)); 
+          xi1=x(i,1)*ones(size(ii)); xi2=x(i,2)*ones(size(ii));
           line([x(ii,1),xi1]',[x(ii,2),xi2]','Color',col);
         end;
         axis equal tight;
-        
+
         PARAMETERS
-        
+
         [idx,netsim,dpsim,expref]=apcluster(s,p,'NAME',VALUE,...)
-        
+
         The following parameters can be set by providing name-value
         pairs, eg, apcluster(s,p,'maxits',1000):
-        
+
           Parameter    Value
           'sparse'     No value needed. Use when the number of data
                        points is large (eg, >3000). Normally,
@@ -852,18 +1081,18 @@ class Clustering:
                        To avoid this, APCLUSTER adds a small amount
                        of noise to the input similarities. This flag
                        turns off the addition of noise.
-        
+
         Copyright (c) Brendan J. Frey and Delbert Dueck (2006). This
         software may be freely used and distributed for
         non-commercial purposes.
         """
         ##Global R, A, E, tmpidx, tmpnetsim, S #These get define later down, BUT maybe only behind an if statement.
         ##check inputs
-        ''' issues with apcluster_sparse original Matlab file...
+        """ issues with apcluster_sparse original Matlab file...
         if sparse == True:
             return self.apcluster_sparse(self, s, p, maxits=maxits, convits=convits, dampfact=dampfact, plot=plot,
                                     details=details, nonoise=nonoise)
-        '''
+        """
         maxits = int(maxits)
         if maxits <= 0:
             # print('maxits must be positive integer')
@@ -877,7 +1106,7 @@ class Clustering:
             # print('dampfact must be in the range [0.5, 1)')
             return None
         if lam > 0.9:
-            #print('\nLarge damping factor selected, plotting is recommended, Algorithm will also change decisions slowly so large convits should be set as well.\n')
+            # print('\nLarge damping factor selected, plotting is recommended, Algorithm will also change decisions slowly so large convits should be set as well.\n')
             pass
         if len(s.shape) != 2:
             # print('s should be 2d matrix')
@@ -918,8 +1147,9 @@ class Clustering:
         if not nonoise:
             rns = np.random.get_state()
             np.random.seed(0)
-            S = S + (self.eps * S + self.realmin * 100) * np.random.random(
-                (N, N))  # (eps*S+realmin*100) is orginial form (probably too small to make a difference)
+            S = (
+                S + (self.eps * S + self.realmin * 100) * np.random.random((N, N))
+            )  # (eps*S+realmin*100) is orginial form (probably too small to make a difference)
             np.random.set_state(rns)
         # place preference on diagonal of S
         if np.isscalar(p):
@@ -973,20 +1203,20 @@ class Clustering:
             # damping
             A = (1 - lam) * A + lam * Aold
             # check for convergence
-            E = ((np.diag(A) + np.diag(R)) > 0)
+            E = (np.diag(A) + np.diag(R)) > 0
             e[:, (i - 1) % convits] = E
             K = np.sum(E)  # I think E is a vector so sum should work properly
             if i >= convits or i >= maxits:
                 se = np.sum(e, axis=1)
-                unconverged = (np.sum((se == convits) + (se == 0)) != N)
+                unconverged = np.sum((se == convits) + (se == 0)) != N
                 if (not unconverged and (K > 0)) or (i == maxits):
                     dn = True
             # handle plotting/details storage
             if plot or details:
                 if K == 0:
-                    tmpnetsim = np.nan;
-                    tmpdpsim = np.nan;
-                    tmpexpref = np.nan;
+                    tmpnetsim = np.nan
+                    tmpdpsim = np.nan
+                    tmpexpref = np.nan
                     tmpidx = np.nan
                 else:
                     I = np.nonzero(E)[0][:]
@@ -994,8 +1224,11 @@ class Clustering:
                     c = np.argmax(S[:, I], axis=1)
                     c[I] = np.arange(0, K)
                     tmpidx = I[c]
-                    s_flat=S.flatten()
-                    tmpnetsim = np.sum(s_flat[(np.dot(np.array(tmpidx - 1), N) + np.arange(0, N).T)], axis=0)  # might not need axis here
+                    s_flat = S.flatten()
+                    tmpnetsim = np.sum(
+                        s_flat[(np.dot(np.array(tmpidx - 1), N) + np.arange(0, N).T)],
+                        axis=0,
+                    )  # might not need axis here
                     tmpexpref = np.sum(dS[I])
                     tmpdpsim = tmpnetsim - tmpexpref
             if details:
@@ -1008,11 +1241,23 @@ class Clustering:
                 tmp = np.arange(0, i)
                 tmpi = np.nonzero(np.isfinite(netsim[:i]))
                 # replace matplotlib
-                matplotlib.use('qtagg')
-                winc = clusterdisplay(tmp[tmpi], netsim[tmpi], None, None, 'apcluster', '# iterations',
-                                      'Fitness (net similarity) of quantized intermediate solution', None, None, 0)
+                matplotlib.use("qtagg")
+                winc = clusterdisplay(
+                    tmp[tmpi],
+                    netsim[tmpi],
+                    None,
+                    None,
+                    "apcluster",
+                    "# iterations",
+                    "Fitness (net similarity) of quantized intermediate solution",
+                    None,
+                    None,
+                    0,
+                )
         # identify exemplars
-        I = np.nonzero(np.diag(A + R) > 0)[0]  # non-zero returns a tuple: (array of indices, type)
+        I = np.nonzero(np.diag(A + R) > 0)[
+            0
+        ]  # non-zero returns a tuple: (array of indices, type)
         K = max(I.shape)  # fixed len to matlab "Length"
         if K > 0:
             # identify clusters
@@ -1028,7 +1273,8 @@ class Clustering:
             tmpidx = I[c]  # choose I's based on c
             flat = S.ravel()  # for linear indexing in next line
             tmpnetsim = np.sum(
-                flat[(tmpidx) * N + np.arange(0, N)])  # this formula is for linear indices #possibly wrong
+                flat[(tmpidx) * N + np.arange(0, N)]
+            )  # this formula is for linear indices #possibly wrong
             tmpexpref = np.sum(dS[I])
         else:
             tmpidx = np.full((N, 1), np.nan)
@@ -1036,13 +1282,13 @@ class Clustering:
             tmpexpref = np.nan
         if details:
             netsim[i + 1] = tmpnetsim
-            netsim = netsim[:i + 1]
+            netsim = netsim[: i + 1]
             dpsim[i + 1] = tmpnetsim - tmpexpref
-            dpsim = dpsim[:i + 1]
+            dpsim = dpsim[: i + 1]
             expref[i + 1] = tmpexpref
-            expref = expref[:i + 1]
+            expref = expref[: i + 1]
             idx[:, i + 1] = tmpidx
-            idx = idx[:, :i + 1]
+            idx = idx[:, : i + 1]
         else:
             netsim = tmpnetsim
             dpsim = np.array([tmpnetsim - tmpexpref])
@@ -1060,7 +1306,7 @@ class Clustering:
         #     print(
         #         'To monitor net similarity, activate plotting. Also consider increasing maxits and if necessary, dampfact.')
         return idx, netsim, dpsim, expref, unconverged
-    
+
     @staticmethod
     def apclusterK(self, s, kk, prc=10):
         """Finds approximately k clusters using affinity propagation.
@@ -1110,7 +1356,9 @@ class Clustering:
             dpsim2 = -np.inf
             for j21 in range(N - 1):
                 for j22 in range(j21 + 1, N):
-                    tmp = np.sum(np.amax(S[:, [j21, j22]], axis=1))  # this indexing is very awkckward to do in python
+                    tmp = np.sum(
+                        np.amax(S[:, [j21, j22]], axis=1)
+                    )  # this indexing is very awkckward to do in python
                     if tmp > dpsim2:
                         dpsim2 = tmp
                         k21 = j21
@@ -1129,8 +1377,10 @@ class Clustering:
         i = -4
         dn = False
         while not dn:
-            tmppref = highpref - (10 ** i) * (highpref - lowpref)
-            idx, netsim, dpsim, expref, unconverged = self.apcluster(self, S, tmppref, dampfact=0.9, convits=50, maxits=1000)
+            tmppref = highpref - (10**i) * (highpref - lowpref)
+            idx, netsim, dpsim, expref, unconverged = self.apcluster(
+                self, S, tmppref, dampfact=0.9, convits=50, maxits=1000
+            )
             tmpk = len(np.unique(idx))
             if tmpk <= kk:
                 dn = True
@@ -1148,7 +1398,9 @@ class Clustering:
             ntries = 0
             while (np.abs(tmpk - kk) / kk * 100 > prc) and (ntries < 20):
                 tmppref = 0.5 * highpref + 0.5 * lowpref
-                idx, netsim, dpsim, expref, unconverged = self.apcluster(self, S, tmppref, dampfact=0.9, convits=50, maxits=1000)
+                idx, netsim, dpsim, expref, unconverged = self.apcluster(
+                    self, S, tmppref, dampfact=0.9, convits=50, maxits=1000
+                )
                 tmpk = len(np.unique(idx))
                 if kk > tmpk:
                     lowpref = tmppref
@@ -1160,6 +1412,7 @@ class Clustering:
         pref = tmppref
         # print(f'Found {tmpk} clusters using a preference of {pref}')
         return idx, netsim, dpsim, expref, pref
+
     # end apclusterK
 
     @staticmethod
@@ -1170,7 +1423,9 @@ class Clustering:
         pref = np.linspace(C.pmin, C.pmax, step, endpoint=True)
         yCls = np.zeros(pref.shape)
         for i in range(len(pref)):
-            idx, netsim, dpsim, expref, unconverged = self.apcluster(self, C.S, pref[i], dampfact=0.9)
+            idx, netsim, dpsim, expref, unconverged = self.apcluster(
+                self, C.S, pref[i], dampfact=0.9
+            )
             uIdx = np.unique(idx)
             if (len(uIdx) == len(idx)) and (i < len(pref)):
                 if i == 0:
@@ -1182,6 +1437,7 @@ class Clustering:
         numclust = self.getBestPreference(pref, yCls, pl=pl)
         # print(f'Estimated optimal number of clusters: {numclust}')
         return numclust
+
     # end estimateNumClusters
 
     @staticmethod
@@ -1208,22 +1464,30 @@ class Clustering:
         uMaxabd = uMaxabd[1:]
         cnt = 0
         for i in range(0, uMaxabd.size):
-            ii = np.argwhere(maxabd == uMaxabd[i])[:,
-                 0]  # want 1d array of indices, but argwhere returns nx1 array of indices (each in own col.)
-            ix[cnt:cnt + ii.size] = ii[np.argsort(-ii)]
+            ii = np.argwhere(
+                maxabd == uMaxabd[i]
+            )[
+                :, 0
+            ]  # want 1d array of indices, but argwhere returns nx1 array of indices (each in own col.)
+            ix[cnt : cnt + ii.size] = ii[np.argsort(-ii)]
             cnt += ii.size
         n = x.size // 20
         ix = ix[0:n]
-        ix = ix + 1  # +1 here is a bit sus. I don't know what it does, but the code seems to work with it.
+        ix = (
+            ix + 1
+        )  # +1 here is a bit sus. I don't know what it does, but the code seems to work with it.
         mangle = np.zeros(n)
         for i in range(0, n):
             if ix[i] > 1:
-                sl1 = np.divide((y[ix[i]] - y[ix[i] - 1]), (x[ix[i]] - x[
-                    ix[i] - 1]))  # pretty sure this is right. we should be doing proper matrix division
-                sl2 = np.divide((y[ix[i] + 1] - y[ix[i]]), (x[ix[i] + 1] - x[ix[i]]))  # same here.
+                sl1 = np.divide(
+                    (y[ix[i]] - y[ix[i] - 1]), (x[ix[i]] - x[ix[i] - 1])
+                )  # pretty sure this is right. we should be doing proper matrix division
+                sl2 = np.divide(
+                    (y[ix[i] + 1] - y[ix[i]]), (x[ix[i] + 1] - x[ix[i]])
+                )  # same here.
                 mangle[i] = np.arctan(np.abs((sl1 + sl2) / (1 - (sl1 * sl2))))
         maxMangle = np.max(mangle)
-        uI = (mangle == maxMangle)
+        uI = mangle == maxMangle
         im = np.min(ix[uI])
         ii = im - 2
         xp = x[ii]
@@ -1233,16 +1497,28 @@ class Clustering:
         if pl:
             xCent = np.min(x) + 0.1 * (np.max(x) - np.min(x)) / 2
             yCent = np.min(y) + (np.max(y) - np.min(y)) / 2
-            optText = f'Estimated Optimal Cluster -- {yp}'
+            optText = f"Estimated Optimal Cluster -- {yp}"
 
             # matplotlib
-            matplotlib.use('qtagg')
-            winc = clusterdisplay(x, y, xp, yp, 'Cluster Estimation', 'Preference',
-                                  '# Clusters', 'Optimal Cluster', [xCent, yCent, optText], 1)
+            matplotlib.use("qtagg")
+            winc = clusterdisplay(
+                x,
+                y,
+                xp,
+                yp,
+                "Cluster Estimation",
+                "Preference",
+                "# Clusters",
+                "Optimal Cluster",
+                [xCent, yCent, optText],
+                1,
+            )
         return yp
+
     # end getBestPreference
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     """Tests of cluster estimation function
     
     Unit test for clustering.py
@@ -1250,8 +1526,8 @@ if __name__ == '__main__':
     (0-1 along columns, drop duplicates, sort by feature columns in ascending order.)
     """
     testdata = "testdata\\cluster_test\\iris.txt"
-    testdata = np.loadtxt(testdata, delimiter='\t', skiprows=1, usecols=(2,3,4,5))
+    testdata = np.loadtxt(testdata, delimiter="\t", skiprows=1, usecols=(2, 3, 4, 5))
     clusterTest = Clustering()
-    print('\nTesting Cluster estimation...\n')
+    print("\nTesting Cluster estimation...\n")
     numclust = clusterTest.estimateNumClusters(clusterTest, testdata, pl=False)
-    print(f'\tEstimated 3 clusters from iris dataset: {numclust == 3}')
+    print(f"\tEstimated 3 clusters from iris dataset: {numclust == 3}")

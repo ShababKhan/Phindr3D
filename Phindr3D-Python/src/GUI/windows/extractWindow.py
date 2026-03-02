@@ -27,8 +27,10 @@ except ImportError:
     from src.GUI.windows.regexWindow import *
     from src.Data import *
 
+
 class extractWindow(QDialog):
     """Build window to take input from user to create a metadata file."""
+
     def __init__(self):
         """Construct the window, its widgets, and button actions."""
         super(extractWindow, self).__init__()
@@ -46,7 +48,9 @@ class extractWindow(QDialog):
         imagerootbox.setReadOnly(True)
         imagerootbox.setPlaceholderText(directory)
         imagerootbox.setFixedSize(450, 50)
-        imagerootbox.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+        imagerootbox.setAlignment(
+            Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop
+        )
         imagerootbox.setFont(largetext)
 
         samplelabel = QLabel()
@@ -55,20 +59,26 @@ class extractWindow(QDialog):
         samplefilebox = QTextEdit()
         samplefilebox.setReadOnly(True)
         samplefilebox.setPlaceholderText(self.samplefilename)
-        samplefilebox.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+        samplefilebox.setAlignment(
+            Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop
+        )
         samplefilebox.setFont(largetext)
         samplefilebox.setFixedSize(450, 30)
 
         instructionslabel = QLabel()
         instructionslabel.setFixedHeight(40)
         instructionslabel.setWordWrap(True)
-        instructionslabel.setText("Identify key values in the file name, "
+        instructionslabel.setText(
+            "Identify key values in the file name, "
             "either by clicking Build Regular Expression or by "
             "manually entering a regular expression. Check your work by clicking "
-            "Evaluate Regular Expression.")
+            "Evaluate Regular Expression."
+        )
 
         expressionbox = QLineEdit()
-        expressionbox.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+        expressionbox.setAlignment(
+            Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop
+        )
         expressionbox.setFont(largetext)
         expressionbox.setFixedSize(450, 30)
         expressionbox.setPlaceholderText("Enter Regular Expression Here")
@@ -107,9 +117,10 @@ class extractWindow(QDialog):
             imagerootbox.setText(imagedir)
             # select first '.tif' or '.tiff' file to be sample file
             for file in os.listdir(imagedir):
-                if file.endswith('.tiff') or file.endswith('.tif'):
+                if file.endswith(".tiff") or file.endswith(".tif"):
                     samplefilebox.setText(file)
                     break
+
         # end selectImageDir
 
         def createFile():
@@ -127,7 +138,9 @@ class extractWindow(QDialog):
                     if outputname != "":
                         if not outputname.endswith(".tsv"):
                             outputname = outputname + ".tsv"
-                        created = DataFunctions.createMetadata(imagedir, regex, outputname)
+                        created = DataFunctions.createMetadata(
+                            imagedir, regex, outputname
+                        )
                     else:
                         created = DataFunctions.createMetadata(imagedir, regex)
                     if created:
@@ -136,10 +149,14 @@ class extractWindow(QDialog):
                         alert.setWindowTitle("Notice")
                         self.close()
                     else:
-                        alert.setText("Error: No Regex matches found in selected folder.")
+                        alert.setText(
+                            "Error: No Regex matches found in selected folder."
+                        )
                         alert.setIcon(QMessageBox.Icon.Critical)
                 except MissingChannelStackError:
-                    alert.setText("Error: No Channel and/or Stack groups found in regex.")
+                    alert.setText(
+                        "Error: No Channel and/or Stack groups found in regex."
+                    )
                     alert.setIcon(QMessageBox.Icon.Critical)
                 alert.show()
                 alert.exec()
@@ -150,6 +167,7 @@ class extractWindow(QDialog):
                 alert.setIcon(QMessageBox.Icon.Critical)
                 alert.show()
                 alert.exec()
+
         # end createFile
 
         def evalRegex():
@@ -167,7 +185,9 @@ class extractWindow(QDialog):
             if samplefile == "":
                 alert = QMessageBox()
                 alert.setWindowTitle("Error")
-                alert.setText("No sample file was found. Please check the selected image directory.")
+                alert.setText(
+                    "No sample file was found. Please check the selected image directory."
+                )
                 alert.setIcon(QMessageBox.Icon.Critical)
                 alert.show()
                 alert.exec()
@@ -189,13 +209,15 @@ class extractWindow(QDialog):
                 relist.addItem("No results")
             else:
                 for rekey in reout.keys():
-                    nextline = str(rekey)+" ::: "+str(reout[rekey])
+                    nextline = str(rekey) + " ::: " + str(reout[rekey])
                     relist.addItem(nextline)
             # Ok button closes the window
             reok = QPushButton("Ok")
+
             # button behaviour
             def okPressed():
                 winex.close()
+
             reok.clicked.connect(okPressed)
 
             # add the widgets to the layout
@@ -206,7 +228,8 @@ class extractWindow(QDialog):
             winex.setLayout(winlayout)
             winex.show()
             winex.exec()
-        #end evalRegex
+
+        # end evalRegex
 
         def regexCreation():
             """Open regex creation window in response to button click."""
@@ -218,6 +241,7 @@ class extractWindow(QDialog):
             if result:
                 expressionbox.setText(creationWindow.regex)
                 creationWindow.close()
+
         # end regexCreation
 
         cancel.clicked.connect(self.close)
@@ -242,10 +266,13 @@ class extractWindow(QDialog):
         layout.setSpacing(10)
         self.setLayout(layout)
         self.setFixedSize(self.minimumSizeHint())
+
     # end __init__
+
+
 # end extractWindow
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = extractWindow()
     window.show()

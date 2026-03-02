@@ -17,9 +17,7 @@
 import numpy as np
 import pandas
 import os.path
-import cv2
 import tifffile as tf
-import imagecodecs
 import json
 from scipy.stats.mstats import mquantiles
 
@@ -35,8 +33,10 @@ try:
 except ImportError:
     from src.PhindConfig.PhindConfig import *
 
-class Generator():
+
+class Generator:
     """Define a class to hold a Numpy random number generator."""
+
     def __init__(self, seed=None):
         """Construct a class with a random number generator with optional seed value."""
         self.seed = seed
@@ -44,8 +44,12 @@ class Generator():
             self.Generator = np.random.default_rng()
         else:
             self.Generator = np.random.default_rng(seed)
+
     # end constructor
+
+
 # end Generator
+
 
 class Metadata:
     """This class handles groups of image files and the associated metadata."""
@@ -58,9 +62,9 @@ class Metadata:
 
         # Define user-controlled parameters and set default values
         self.intensityNormPerTreatment = False
-        self.treatmentColNameForNormalization= ''
-        self.trainbycondition= False
-        self.trainingColforImageCategories=''
+        self.treatmentColNameForNormalization = ""
+        self.trainbycondition = False
+        self.trainingColforImageCategories = ""
         self.randTrainingPerTreatment = 1
         self.countBackground = PhindConfig.countBackground
         self.randTrainingFields = PhindConfig.randTrainingFields
@@ -80,6 +84,7 @@ class Metadata:
 
         # Tile configuration and info from getTileInfo
         self.theTileInfo = TileInfo()
+
     # end constructor
 
     def SetMetadataFilename(self, omf):
@@ -92,6 +97,7 @@ class Metadata:
         else:
             self.metadataFilename = omf
             return True
+
     # end SetMetadataFilename
 
     def GetMetadataFilename(self):
@@ -105,6 +111,7 @@ class Metadata:
             return False
         else:
             return self.metadataFilename
+
     # end GetMetadataFilename
 
     def metadataFileExists(self, omf):
@@ -117,6 +124,7 @@ class Metadata:
             return False
         else:
             return os.path.exists(omf)
+
     # end metadataFileExists
 
     def loadMetadataFile(self, filepath):
@@ -126,25 +134,28 @@ class Metadata:
         """
         if not self.metadataFileExists(filepath):
             raise FileNotFoundError
-        metadata = pandas.read_table(filepath, usecols=lambda c: not c.startswith('Unnamed:'), delimiter='\t')
+        metadata = pandas.read_table(
+            filepath, usecols=lambda c: not c.startswith("Unnamed:"), delimiter="\t"
+        )
         numrows = metadata.shape[0]
         rows = []
         # counts channels
         channels = []
         for col in metadata:
-            if col.startswith('Channel_'):
+            if col.startswith("Channel_"):
                 channels.append(col)
         # if there are no channels, stack, or imageid, return error
-        if channels == [] or ('Stack' not in metadata) or ('ImageID' not in metadata):
+        if channels == [] or ("Stack" not in metadata) or ("ImageID" not in metadata):
             raise MissingChannelStackError
 
         # takes input metadata and stores in a list of tuples, each representing a row of metadata
         for i in range(numrows):
             row = []
             for channel in channels:
-                if os.path.exists(metadata.at[i, channel]) \
-                    and (metadata.at[i, channel].endswith(".tiff")
-                         or metadata.at[i, channel].endswith(".tif")):
+                if os.path.exists(metadata.at[i, channel]) and (
+                    metadata.at[i, channel].endswith(".tiff")
+                    or metadata.at[i, channel].endswith(".tif")
+                ):
                     row.append(metadata.at[i, channel])
                 else:
                     raise MissingChannelStackError
@@ -152,13 +163,19 @@ class Metadata:
             # these will be ordered at the end, for referencing purposes
             # order of a row of data: Channels, Other Parameters, Stack, MetadataFile, ImageID
             for col in metadata:
-                if col.startswith('Channel_') or col in ['Stack', 'MetadataFile', 'ImageID',
-                        'bounds', 'intensity_thresholds', 'treatmentColNameForNormalization']:
+                if col.startswith("Channel_") or col in [
+                    "Stack",
+                    "MetadataFile",
+                    "ImageID",
+                    "bounds",
+                    "intensity_thresholds",
+                    "treatmentColNameForNormalization",
+                ]:
                     continue
                 row.append(metadata.at[i, col])
-            row.append(metadata.at[i, 'Stack'])
-            row.append(metadata.at[i, 'MetadataFile'])
-            row.append(metadata.at[i, 'ImageID'])
+            row.append(metadata.at[i, "Stack"])
+            row.append(metadata.at[i, "MetadataFile"])
+            row.append(metadata.at[i, "ImageID"])
             rows.append(row)
 
         # to make storing data in the other image classes easier, create list of column names
@@ -167,13 +184,19 @@ class Metadata:
         for chan in channels:
             columnlabels.append(chan)
         for col in metadata:
-            if col.startswith('Channel_') or col in ['Stack', 'MetadataFile', 'ImageID',
-                    'bounds', 'intensity_thresholds', 'treatmentColNameForNormalization']:
+            if col.startswith("Channel_") or col in [
+                "Stack",
+                "MetadataFile",
+                "ImageID",
+                "bounds",
+                "intensity_thresholds",
+                "treatmentColNameForNormalization",
+            ]:
                 continue
             columnlabels.append(col)
-        columnlabels.append('Stack')
-        columnlabels.append('MetadataFile')
-        columnlabels.append('ImageID')
+        columnlabels.append("Stack")
+        columnlabels.append("MetadataFile")
+        columnlabels.append("ImageID")
 
         # puts each row into a dictionary, sorted by image ids
         rowdict = {}
@@ -198,6 +221,7 @@ class Metadata:
         # Set an internal parameter to indicate that metadata has loaded successfully
         self.metadataLoadSuccess = True
         return True
+
     # end loadMetadataFile
 
     def GetNumChannels(self):
@@ -212,6 +236,7 @@ class Metadata:
             return 0
         # if there are no images or no stacks, there are no channels
         return 0
+
     # end GetNumChannels
 
     def GetTreatmentColumnName(self):
@@ -228,8 +253,9 @@ class Metadata:
                 treatmentColumnName = self.trainingColforImageCategories
             # end if
         except AttributeError:
-            treatmentColumnName = 'Treatment'
+            treatmentColumnName = "Treatment"
         return treatmentColumnName
+
     # end GetTreatmentColumnName
 
     def GetAllTreatments(self):
@@ -264,6 +290,7 @@ class Metadata:
         except AttributeError:
             # Return an empty dictionary
             return {}
+
     # end GetAllTreatments
 
     def GetTreatmentTypes(self):
@@ -303,6 +330,7 @@ class Metadata:
         except AttributeError:
             # Return an empty list
             return []
+
     # end GetTreatmentTypes
 
     def GetAllImageIDs(self):
@@ -324,6 +352,7 @@ class Metadata:
         except AttributeError:
             # Return an empty list
             return []
+
     # end GetAllImageIDs
 
     def GetImage(self, theImageID):
@@ -336,6 +365,7 @@ class Metadata:
             return self.images[theImageID]
         except (IndexError, AttributeError, KeyError):
             return None
+
     # end GetImage
 
     def getTrainingFields(self, numTrainingFields=10):
@@ -353,12 +383,22 @@ class Metadata:
         uniqueImageID = np.array(self.GetAllImageIDs())
         numImageIDs = len(uniqueImageID)
         # randTrainingFields is numTrainingFields, unless numTrainingFields is larger than numImageIDs
-        randTrainingFields = numImageIDs if numImageIDs < numTrainingFields else numTrainingFields
+        randTrainingFields = (
+            numImageIDs if numImageIDs < numTrainingFields else numTrainingFields
+        )
 
         if not self.intensityNormPerTreatment:
-            randFieldID = np.array([uniqueImageID[i] for i in
-                self.Generator.Generator.choice(uniqueImageID.size, size=randTrainingFields,
-                    replace=False, shuffle=False)])
+            randFieldID = np.array(
+                [
+                    uniqueImageID[i]
+                    for i in self.Generator.Generator.choice(
+                        uniqueImageID.size,
+                        size=randTrainingFields,
+                        replace=False,
+                        shuffle=False,
+                    )
+                ]
+            )
         else:
             # have different treatments, want to choose training images from each treatment.
             uTreat = self.GetTreatmentTypes()
@@ -367,8 +407,9 @@ class Metadata:
             allTrValues = np.array(list(allTreatments.values()))
             # Protect against ZeroDivisionError if len(uTreat) is 0
             try:
-                randTrainingPerTreatment = \
-                    -(-randTrainingFields//len(uTreat)) #ceiling division
+                randTrainingPerTreatment = -(
+                    -randTrainingFields // len(uTreat)
+                )  # ceiling division
             except ZeroDivisionError:
                 randTrainingPerTreatment = 1
 
@@ -378,19 +419,29 @@ class Metadata:
                 try:
                     treatmentIDs = allTrKeys[allTrValues == treat]
                     if len(treatmentIDs) > randTrainingPerTreatment:
-                        tempList = [treatmentIDs[j] for j in
-                            self.Generator.Generator.choice(len(treatmentIDs), size=randTrainingPerTreatment,
-                                replace=False, shuffle=False)]
-                    elif len(treatmentIDs) > 0 and len(treatmentIDs) <= randTrainingPerTreatment:
+                        tempList = [
+                            treatmentIDs[j]
+                            for j in self.Generator.Generator.choice(
+                                len(treatmentIDs),
+                                size=randTrainingPerTreatment,
+                                replace=False,
+                                shuffle=False,
+                            )
+                        ]
+                    elif (
+                        len(treatmentIDs) > 0
+                        and len(treatmentIDs) <= randTrainingPerTreatment
+                    ):
                         tempList = list(treatmentIDs)
-                except (ValueError,KeyError) as e:
+                except (ValueError, KeyError):
                     tempList = []
                 randFieldIDList = randFieldIDList + tempList
             randFieldIDList.sort()
             randFieldID = np.array(randFieldIDList)
-        #end if
+        # end if
         # output is randFieldID is a Numpy array of image ids
         return randFieldID
+
     # end getTrainingFields
 
     def getScalingFactorforImages(self, randFieldIDforNormalization):
@@ -399,7 +450,7 @@ class Metadata:
         # On error, return the following value
         treatmentColumnName = self.GetTreatmentColumnName()
 
-        errorVal = ([0,0,0], [1,1,1])
+        errorVal = ([0, 0, 0], [1, 1, 1])
         if randFieldIDforNormalization.size == 0:
             return errorVal
         # else
@@ -418,13 +469,15 @@ class Metadata:
             # which images
             theID = int(randFieldIDforNormalization[i])  # which 3d image
             theImageObject = self.GetImage(theID)
-            zStack = theImageObject.stackLayers # dictionary
+            zStack = theImageObject.stackLayers  # dictionary
             # Get the number of stack layers in the image
             depth = len(zStack)
             zStackKeys = list(zStack.keys())
             randHalf = int(depth // 2)
             # choose half of the stack, randomly
-            generatedArray = self.Generator.Generator.choice(depth, size=randHalf, replace=False, shuffle=False)
+            generatedArray = self.Generator.Generator.choice(
+                depth, size=randHalf, replace=False, shuffle=False
+            )
             # TO DO Add try-catch here for KeyError
             randZ = [zStackKeys[int(j)] for j in generatedArray]
             minVal = np.zeros((randHalf, numChannels))
@@ -464,15 +517,24 @@ class Metadata:
             for i in range(0, uGrp.size):
                 ii = grpVal == uGrp[i]
                 if np.sum(ii) > 1:
-                    lowerbound[i, :] = mquantiles(minChannel[grpVal == uGrp[i], :], 0.01, alphap=0.5, betap=0.5)
-                    upperbound[i, :] = mquantiles(maxChannel[grpVal == uGrp[i], :], 0.99, alphap=0.5, betap=0.5)
+                    lowerbound[i, :] = mquantiles(
+                        minChannel[grpVal == uGrp[i], :], 0.01, alphap=0.5, betap=0.5
+                    )
+                    upperbound[i, :] = mquantiles(
+                        maxChannel[grpVal == uGrp[i], :], 0.99, alphap=0.5, betap=0.5
+                    )
                 else:
                     lowerbound[i, :] = minChannel[grpVal == uGrp[i], :]
                     upperbound[i, :] = maxChannel[grpVal == uGrp[i], :]
         else:
-            lowerbound = mquantiles(minChannel, 0.01, alphap=0.5, betap=0.5, axis=0).ravel()
-            upperbound = mquantiles(maxChannel, 0.99, alphap=0.5, betap=0.5, axis=0).ravel()
+            lowerbound = mquantiles(
+                minChannel, 0.01, alphap=0.5, betap=0.5, axis=0
+            ).ravel()
+            upperbound = mquantiles(
+                maxChannel, 0.99, alphap=0.5, betap=0.5, axis=0
+            ).ravel()
         return (lowerbound, upperbound)
+
     # end getScalingFactorforImages
 
     def getImageInformation(self, theImage, chan=0):
@@ -503,6 +565,7 @@ class Metadata:
             d[0] = 0
             d[1] = 1
         return d
+
     # end getImageInformation
 
     def getTileInfo(self, dimSize, tileInfo):
@@ -517,11 +580,15 @@ class Metadata:
         zOffset = dimSize[2] % tileInfo.tileZ
 
         if xOffset % 2 == 0:
-            tileInfo.xOffsetStart = int(xOffset / 2 + 1) - 1  # remember 0 indexing in python
+            tileInfo.xOffsetStart = (
+                int(xOffset / 2 + 1) - 1
+            )  # remember 0 indexing in python
             tileInfo.xOffsetEnd = int(xOffset / 2)
         else:
             tileInfo.xOffsetStart = int(xOffset // 2 + 1) - 1
-            tileInfo.xOffsetEnd = int(-(-xOffset // 2))  # ceiling division is the same as upside-down floor division.
+            tileInfo.xOffsetEnd = int(
+                -(-xOffset // 2)
+            )  # ceiling division is the same as upside-down floor division.
         if yOffset % 2 == 0:
             tileInfo.yOffsetStart = int(yOffset / 2 + 1) - 1
             tileInfo.yOffsetEnd = int(yOffset / 2)
@@ -539,9 +606,15 @@ class Metadata:
         tileInfo.croppedY = dimSize[1] - tileInfo.yOffsetStart - tileInfo.yOffsetEnd
         tileInfo.croppedZ = dimSize[2] - tileInfo.zOffsetStart - tileInfo.zOffsetEnd
 
-        superVoxelXOffset = (tileInfo.croppedX / tileInfo.tileX) % tileInfo.megaVoxelTileX
-        superVoxelYOffset = (tileInfo.croppedY / tileInfo.tileY) % tileInfo.megaVoxelTileY
-        superVoxelZOffset = (tileInfo.croppedZ / tileInfo.tileZ) % tileInfo.megaVoxelTileZ
+        superVoxelXOffset = (
+            tileInfo.croppedX / tileInfo.tileX
+        ) % tileInfo.megaVoxelTileX
+        superVoxelYOffset = (
+            tileInfo.croppedY / tileInfo.tileY
+        ) % tileInfo.megaVoxelTileY
+        superVoxelZOffset = (
+            tileInfo.croppedZ / tileInfo.tileZ
+        ) % tileInfo.megaVoxelTileZ
         tileInfo.origX = dimSize[0]
         tileInfo.origY = dimSize[1]
         tileInfo.origZ = dimSize[2]
@@ -551,8 +624,12 @@ class Metadata:
             tileInfo.superVoxelXOffsetEnd = superVoxelXOffset / 2
         else:
             tileInfo.superVoxelXOffsetStart = superVoxelXOffset // 2 + 1
-            tileInfo.superVoxelXOffsetEnd = -(-superVoxelXOffset // 2)  # same floor division trick.
-        if superVoxelXOffset != 0:  # add pixel rows if size of supervoxels are not directly visible
+            tileInfo.superVoxelXOffsetEnd = -(
+                -superVoxelXOffset // 2
+            )  # same floor division trick.
+        if (
+            superVoxelXOffset != 0
+        ):  # add pixel rows if size of supervoxels are not directly visible
             numSuperVoxelsToAddX = tileInfo.megaVoxelTileX - superVoxelXOffset
             if numSuperVoxelsToAddX % 2 == 0:
                 tileInfo.superVoxelXAddStart = int(numSuperVoxelsToAddX / 2)
@@ -572,7 +649,7 @@ class Metadata:
                 tileInfo.superVoxelYAddEnd = int(numSuperVoxelsToAddY / 2)
             else:
                 tileInfo.superVoxelYAddStart = int(numSuperVoxelsToAddY // 2)
-                tileInfo.superVoxelYAddEnd = int(-(- numSuperVoxelsToAddY // 2))
+                tileInfo.superVoxelYAddEnd = int(-(-numSuperVoxelsToAddY // 2))
         else:
             tileInfo.superVoxelYAddStart = int(0)
             tileInfo.superVoxelYAddEnd = int(0)
@@ -601,18 +678,32 @@ class Metadata:
             tileInfo.superVoxelZOffsetStart = int(superVoxelZOffset // 2 + 1) - 1
             tileInfo.superVoxelZOffsetEnd = int(-(-superVoxelZOffset // 2))
 
-        tileInfo.numSuperVoxels = (tileInfo.croppedX * tileInfo.croppedY * tileInfo.croppedZ) // (
-                    tileInfo.tileX * tileInfo.tileY * tileInfo.tileZ)  # supposed to be all elementwise operations (floor division too)
-        tileInfo.numSuperVoxelsXY = (tileInfo.croppedX * tileInfo.croppedY) / (tileInfo.tileX * tileInfo.tileY)
+        tileInfo.numSuperVoxels = (
+            tileInfo.croppedX * tileInfo.croppedY * tileInfo.croppedZ
+        ) // (
+            tileInfo.tileX * tileInfo.tileY * tileInfo.tileZ
+        )  # supposed to be all elementwise operations (floor division too)
+        tileInfo.numSuperVoxelsXY = (tileInfo.croppedX * tileInfo.croppedY) / (
+            tileInfo.tileX * tileInfo.tileY
+        )
 
         tmpX = (tileInfo.croppedX / tileInfo.tileX) + superVoxelXOffset
         tmpY = (tileInfo.croppedY / tileInfo.tileY) + superVoxelYOffset
         tmpZ = (tileInfo.croppedZ / tileInfo.tileZ) + superVoxelZOffset
 
         tileInfo.numMegaVoxels = int(
-            (tmpX * tmpY * tmpZ) // (tileInfo.megaVoxelTileX * tileInfo.megaVoxelTileY * tileInfo.megaVoxelTileZ))
-        tileInfo.numMegaVoxelsXY = int((tmpX * tmpY) / (tileInfo.megaVoxelTileX * tileInfo.megaVoxelTileY))
+            (tmpX * tmpY * tmpZ)
+            // (
+                tileInfo.megaVoxelTileX
+                * tileInfo.megaVoxelTileY
+                * tileInfo.megaVoxelTileZ
+            )
+        )
+        tileInfo.numMegaVoxelsXY = int(
+            (tmpX * tmpY) / (tileInfo.megaVoxelTileX * tileInfo.megaVoxelTileY)
+        )
         return tileInfo
+
     # end getTileInfo
 
     def getIndividualChannelThreshold(self, theImageObject, theTileInfo):
@@ -645,7 +736,7 @@ class Metadata:
                     imFileName = theChannel.channelpath
                 except (IndexError, AttributeError):
                     return errorVal
-                IM = tf.imread(imFileName) 
+                IM = tf.imread(imFileName)
                 xEnd = -theTileInfo.xOffsetEnd
                 if xEnd == -0:
                     # if the end index is -0, you just index from 1 to behind 1
@@ -654,18 +745,29 @@ class Metadata:
                 yEnd = -theTileInfo.yOffsetEnd
                 if yEnd == -0:
                     yEnd = None
-                IM = IM[theTileInfo.xOffsetStart:xEnd, theTileInfo.yOffsetStart:yEnd]
+                IM = IM[
+                    theTileInfo.xOffsetStart : xEnd, theTileInfo.yOffsetStart : yEnd
+                ]
 
                 if self.intensityNormPerTreatment:
-                    IM = DataFunctions.rescaleIntensity(IM,
-                        low=self.lowerbound[grpVal, iChannels], high=self.upperbound[grpVal, iChannels])
+                    IM = DataFunctions.rescaleIntensity(
+                        IM,
+                        low=self.lowerbound[grpVal, iChannels],
+                        high=self.upperbound[grpVal, iChannels],
+                    )
                 else:
-                    IM = DataFunctions.rescaleIntensity(IM,
-                        low=self.lowerbound[iChannels], high=self.upperbound[iChannels])
+                    IM = DataFunctions.rescaleIntensity(
+                        IM,
+                        low=self.lowerbound[iChannels],
+                        high=self.upperbound[iChannels],
+                    )
                 # want double precision here. not sure if python can handle this since
                 # rounding error occurs at 1e-16, but will make float64 anyway
-                thresh[iImages, iChannels] = DataFunctions.getImageThreshold(IM.astype('float64'))
+                thresh[iImages, iChannels] = DataFunctions.getImageThreshold(
+                    IM.astype("float64")
+                )
         return thresh
+
     # end getIndividualChannelThreshold
 
     def getImageThresholdValues(self, randFieldID):
@@ -674,7 +776,9 @@ class Metadata:
         On error return one row of num channels entries, each entry np.nan
         """
         numChannels = self.GetNumChannels()
-        intensityThresholdValues = np.full((5000, numChannels), np.nan)  # not sure why we want 5000 rows - probably because MATLAB code performance can be improved by preallocating memory which is not necessary in Python.
+        intensityThresholdValues = np.full(
+            (5000, numChannels), np.nan
+        )  # not sure why we want 5000 rows - probably because MATLAB code performance can be improved by preallocating memory which is not necessary in Python.
         # define a value to return on error
         errorVal = np.full((1, numChannels), np.nan)
         startVal = 0
@@ -685,19 +789,27 @@ class Metadata:
             theImageObject = self.GetImage(id)
             d = self.getImageInformation(theImageObject)
             self.theTileInfo = self.getTileInfo(d, self.theTileInfo)
-            tempThreshold = self.getIndividualChannelThreshold(theImageObject, self.theTileInfo)
-            intensityThresholdValues[startVal:endVal+tempThreshold.shape[0], :] = tempThreshold
+            tempThreshold = self.getIndividualChannelThreshold(
+                theImageObject, self.theTileInfo
+            )
+            intensityThresholdValues[startVal : endVal + tempThreshold.shape[0], :] = (
+                tempThreshold
+            )
             startVal += tempThreshold.shape[0]
             endVal += tempThreshold.shape[0]
 
-        outputThresholdValues = \
-            intensityThresholdValues[np.isfinite(intensityThresholdValues).any(axis=1)] # shababkhan
+        outputThresholdValues = intensityThresholdValues[
+            np.isfinite(intensityThresholdValues).any(axis=1)
+        ]  # shababkhan
 
         return outputThresholdValues
+
     # end getImageThresholdValues
 
-    #def computeImageParameters(self):
-    def computeImageParameters(self, sliderValue = PhindConfig.intensityThresholdTuningFactor):
+    # def computeImageParameters(self):
+    def computeImageParameters(
+        self, sliderValue=PhindConfig.intensityThresholdTuningFactor
+    ):
         """Compute the scaling factors and thresholds.
 
         Call after loading metadata. Calls functions that compute the scaling factors and thresholds.
@@ -710,61 +822,87 @@ class Metadata:
         # else
         # TO DO: catch errors, return False if caught
         self.trainingSet = self.getTrainingFields(self.randTrainingFields)
-        (self.lowerbound, self.upperbound) = self.getScalingFactorforImages(self.trainingSet)
+        (self.lowerbound, self.upperbound) = self.getScalingFactorforImages(
+            self.trainingSet
+        )
         self.intensityThresholdValues = self.getImageThresholdValues(self.trainingSet)
-        intensityThreshold = mquantiles(self.intensityThresholdValues, sliderValue, alphap=0.5, betap=0.5, axis=0)  # use Type 5 Method - piecewise linear function
-        self.intensityThreshold = np.reshape(intensityThreshold, (1, self.GetNumChannels()))
+        intensityThreshold = mquantiles(
+            self.intensityThresholdValues, sliderValue, alphap=0.5, betap=0.5, axis=0
+        )  # use Type 5 Method - piecewise linear function
+        self.intensityThreshold = np.reshape(
+            intensityThreshold, (1, self.GetNumChannels())
+        )
         return True
+
     # end computeImageParameters
+
 
 # end class Metadata
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     """Tests of the Metadata class that can be run directly."""
 
     deterministic = Generator(1234)
     rng = Generator()
 
-    metadatafile = 'testdata/metadata_tests/metadatatest_metadata.tsv'
+    metadatafile = "testdata/metadata_tests/metadatatest_metadata.tsv"
 
     test = Metadata(deterministic)
     try:
         if test.loadMetadataFile(metadatafile):
-
-            with open('testdata/metadata_tests/expected.json', 'r') as js:
+            with open("testdata/metadata_tests/expected.json", "r") as js:
                 expected = json.load(js)
                 js.close()
 
             print("So, did it load? " + "Yes!" if test.metadataLoadSuccess else "No.")
             print("===")
-            print("Running computeImageParameters: " + "Successful" if test.computeImageParameters() else "Unsuccessful")
+            print(
+                "Running computeImageParameters: " + "Successful"
+                if test.computeImageParameters()
+                else "Unsuccessful"
+            )
             print("===")
-            print('Calculated image parameter comparisons...')
+            print("Calculated image parameter comparisons...")
             # print("Lower bound compare: " + str(test.lowerbound) + " and " + str(np.array(expected['lowerbound'])))
             # print("Upper bound compare: " + str(test.upperbound) + " and " + str(np.array(expected['upperbound'])))
             # print("intensityThreshold compare: " + str(test.intensityThreshold) + " and " + str(expected['intensity_threshold']))
-            lowerequal = (test.lowerbound == np.array(expected['lowerbound'])).all()
-            upperequal = (test.upperbound == np.array(expected['upperbound'])).all()
-            intequal = (test.intensityThreshold == np.array(expected['intensity_threshold'])).all()
-            print(f'Scaling factor expected result: { lowerequal and upperequal }')
-            print(f'Intensity threshold expected result: {intequal}')
+            lowerequal = (test.lowerbound == np.array(expected["lowerbound"])).all()
+            upperequal = (test.upperbound == np.array(expected["upperbound"])).all()
+            intequal = (
+                test.intensityThreshold == np.array(expected["intensity_threshold"])
+            ).all()
+            print(f"Scaling factor expected result: {lowerequal and upperequal}")
+            print(f"Intensity threshold expected result: {intequal}")
             print("===")
             test.intensityNormPerTreatment = True
-            test.treatmentColNameForNormalization = 'Treatment'
-            test.trainingColforImageCategories = 'Treatment'
+            test.treatmentColNameForNormalization = "Treatment"
+            test.trainingColforImageCategories = "Treatment"
             # Run the test with the new Treatment settings
             treatmentTestRun = test.computeImageParameters()
-            print("Running computeImageParameters by treatment: " + "Successful" if treatmentTestRun else "Unsuccessful")
+            print(
+                "Running computeImageParameters by treatment: " + "Successful"
+                if treatmentTestRun
+                else "Unsuccessful"
+            )
             print("===")
-            print('Calculated image parameter by treatment comparisons...')
+            print("Calculated image parameter by treatment comparisons...")
             # print("Lower bound compare: " + str(test.lowerbound) + " and " + str(np.array(expected['treatment_lowerbound'])))
             # print("Upper bound compare: " + str(test.upperbound) + " and " + str(np.array(expected['treatment_upperbound'])))
             # print("intensityThreshold compare: " + str(test.intensityThreshold) + " and " + str(expected['treatment_intensity_threshold']))
-            treatlowerequal = (test.lowerbound == np.array(expected['treatment_lowerbound'])).all()
-            treatupperequal = (test.upperbound == np.array(expected['treatment_upperbound'])).all()
-            treatintequal = (test.intensityThreshold == np.array(expected['treatment_intensity_threshold'])).all()
-            print(f'Scaling factors by treatment expected result: {treatlowerequal and treatupperequal}')
-            print(f'Intensity threshold expected result: {treatintequal}')
+            treatlowerequal = (
+                test.lowerbound == np.array(expected["treatment_lowerbound"])
+            ).all()
+            treatupperequal = (
+                test.upperbound == np.array(expected["treatment_upperbound"])
+            ).all()
+            treatintequal = (
+                test.intensityThreshold
+                == np.array(expected["treatment_intensity_threshold"])
+            ).all()
+            print(
+                f"Scaling factors by treatment expected result: {treatlowerequal and treatupperequal}"
+            )
+            print(f"Intensity threshold expected result: {treatintequal}")
         else:
             print("loadMetadataFile was unsuccessful")
     except FileNotFoundError:

@@ -19,6 +19,7 @@ try:
 except ImportError:
     from ImageChannel import *
 
+
 class Stack:
     """This class handles groups of image files associated with a particular stack value."""
 
@@ -35,20 +36,25 @@ class Stack:
         # rowi (row index) used to iterate row alongside columns
         rowi = 0
         for col in columnlabels:
-            if col.startswith('Channel_'):
+            if col.startswith("Channel_"):
                 strlen = len(col)
-                channelnum = int(col[8:strlen]) # channel number is always the 9th letter until end in 'Channel_X'
+                channelnum = int(
+                    col[8:strlen]
+                )  # channel number is always the 9th letter until end in 'Channel_X'
                 newchan = ImageChannel()
                 newchan.setPath(row[rowi])
                 self.channels[channelnum] = newchan
-            elif col.startswith('Stack'): # once iterator reaches 'Stack', no more additional params to store
+            elif col.startswith(
+                "Stack"
+            ):  # once iterator reaches 'Stack', no more additional params to store
                 return
             else:
                 self.otherparams[col] = row[rowi]
             rowi += 1
+
     # end addChannels
 
-    def GetTreatment(self, treatmentColumnName='Treatment'):
+    def GetTreatment(self, treatmentColumnName="Treatment"):
         """Return the value from the Treatment column if it exists.
 
         Treatment is an optional column in the metadata. If the column exists,
@@ -60,11 +66,14 @@ class Stack:
             return self.otherparams[treatmentColumnName]
         except (KeyError, AttributeError):
             return None
+
     # end GetTreatment
 
     def GetNumChannels(self):
         """Get the number of channels in each stack layer."""
         return len(self.channels)
+
     # end GetNumChannels
+
 
 # end class Stack

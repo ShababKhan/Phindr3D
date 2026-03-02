@@ -16,6 +16,7 @@
 
 from ..PhindConfig.PhindConfig import *
 
+
 class Training:
     def __init__(self):
         """Training class constructor"""
@@ -24,12 +25,16 @@ class Training:
         self.minQuantileScaling = PhindConfig.minQuantileScaling
         self.maxQuantileScaling = PhindConfig.maxQuantileScaling
         self.randTrainingSuperVoxel = PhindConfig.randTrainingSuperVoxel
-        self.superVoxelThresholdTuningFactor = PhindConfig.superVoxelThresholdTuningFactor
+        self.superVoxelThresholdTuningFactor = (
+            PhindConfig.superVoxelThresholdTuningFactor
+        )
         self.megaVoxelThresholdTuningFactor = PhindConfig.megaVoxelThresholdTuningFactor
         self.randTrainingFields = PhindConfig.randTrainingFields
         self.pixelsPerImage = PhindConfig.pixelsPerImage
         self.trainingPerColumn = PhindConfig.trainingPerColumn
         self.superVoxelPerField = PhindConfig.superVoxelPerField
+
     # end constructor
+
 
 # end class Training

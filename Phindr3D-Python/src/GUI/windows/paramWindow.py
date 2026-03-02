@@ -18,11 +18,25 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
 from PyQt6.QtCore import *
 
+
 class paramWindow(QDialog):
     """Build a GUI window for setting voxel parameters."""
-    def __init__(self, metacolumns, supercoords, svcategories, megacoords,
-            mvcategories, voxelnum, trainingnum, bg, norm, conditiontrain,
-            trainingcol, treatmentcol):
+
+    def __init__(
+        self,
+        metacolumns,
+        supercoords,
+        svcategories,
+        megacoords,
+        mvcategories,
+        voxelnum,
+        trainingnum,
+        bg,
+        norm,
+        conditiontrain,
+        trainingcol,
+        treatmentcol,
+    ):
         """Construct the GUI window for setting voxel parameters."""
         super(paramWindow, self).__init__()
         self.setWindowTitle("Set Parameters")
@@ -114,9 +128,11 @@ class paramWindow(QDialog):
         trainfilter.addItems(metacolumns)
         trainfilter.setEnabled(False)
         normalise.clicked.connect(
-            lambda: normtreatfilter.setEnabled(not normtreatfilter.isEnabled()))
+            lambda: normtreatfilter.setEnabled(not normtreatfilter.isEnabled())
+        )
         trainbycondition.clicked.connect(
-            lambda: trainfilter.setEnabled(not trainfilter.isEnabled()))
+            lambda: trainfilter.setEnabled(not trainfilter.isEnabled())
+        )
 
         mainbox.layout().addWidget(QLabel("#Voxel\nCategories"), 0, 0, 1, 1)
         mainbox.layout().addWidget(voxelcategories, 0, 1, 1, 1)
@@ -134,10 +150,10 @@ class paramWindow(QDialog):
         reset = QPushButton("Reset")
         done = QPushButton("Done")
 
-        if treatmentcol!='':
+        if treatmentcol != "":
             normtreatfilter.setEnabled(True)
             normtreatfilter.setCurrentIndex(normtreatfilter.findText(treatmentcol))
-        if trainingcol!='':
+        if trainingcol != "":
             trainfilter.setEnabled(True)
             trainfilter.setCurrentIndex(trainfilter.findText(trainingcol))
 
@@ -159,18 +175,20 @@ class paramWindow(QDialog):
                 self.mvcategories = int(mvnum.text())
                 self.voxelnum = int(voxelcategories.text())
                 self.trainingnum = int(trainingimages.text())
-                self.bg = usebackground.isChecked() # For checkboxes, return boolean for if checked or not
+                self.bg = (
+                    usebackground.isChecked()
+                )  # For checkboxes, return boolean for if checked or not
                 self.norm = normalise.isChecked()
                 self.conditiontrain = trainbycondition.isChecked()
                 self.done = True
                 if trainbycondition.isChecked():
-                    self.trainingcol=trainfilter.currentText()
+                    self.trainingcol = trainfilter.currentText()
                 else:
-                    self.trainingcol=''
+                    self.trainingcol = ""
                 if normalise.isChecked():
-                    self.normintensitycol=normtreatfilter.currentText()
+                    self.normintensitycol = normtreatfilter.currentText()
                 else:
-                    self.normintensitycol=''
+                    self.normintensitycol = ""
                 # dropdown behaviour goes here <--
                 self.close()
             except ValueError:
@@ -194,16 +212,17 @@ class paramWindow(QDialog):
             usebackground.setChecked(bg)
             normalise.setChecked(norm)
             normtreatfilter.setEnabled(norm)
-            if normtreatfilter.findText(treatmentcol)>-1:
+            if normtreatfilter.findText(treatmentcol) > -1:
                 normtreatfilter.setCurrentIndex(normtreatfilter.findText(treatmentcol))
             else:
                 normtreatfilter.setCurrentIndex(0)
             trainbycondition.setChecked(conditiontrain)
             trainfilter.setEnabled(conditiontrain)
-            if trainfilter.findText(trainingcol)>-1:
+            if trainfilter.findText(trainingcol) > -1:
                 trainfilter.setCurrentIndex(trainfilter.findText(trainingcol))
             else:
                 trainfilter.setCurrentIndex(0)
+
         # resetPressed
 
         done.clicked.connect(donePressed)
@@ -215,4 +234,5 @@ class paramWindow(QDialog):
         winlayout.addWidget(done, 2, 1, 1, 1)
         winlayout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.setLayout(winlayout)
+
     # end constructor

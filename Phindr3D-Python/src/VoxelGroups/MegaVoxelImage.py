@@ -21,12 +21,15 @@ except ImportError:
     from VoxelBase import *
     from SuperVoxelImage import *
 
+
 class MegaVoxelImage(VoxelBase):
     """Image managed as mega voxels, derived from VoxelBase class."""
+
     def __init__(self):
         """Construct base class and define additional member variable."""
         super().__init__()
-        self.megaVoxelBinCenters = None # np array
+        self.megaVoxelBinCenters = None  # np array
+
     # end constructor
 
     def getMegaVoxelBinCenters(self, metadata, training, pixelImage, superVoxel):
@@ -42,18 +45,29 @@ class MegaVoxelImage(VoxelBase):
             info = metadata.getTileInfo(d, metadata.theTileInfo)
             pixelCenters = pixelImage.pixelBinCenters
             pixelBinCenterDifferences = np.array(
-                [DataFunctions.mat_dot(pixelCenters, pixelCenters, axis=1)]).T
+                [DataFunctions.mat_dot(pixelCenters, pixelCenters, axis=1)]
+            ).T
             superVoxelProfile, fgSuperVoxel = self.getTileProfiles(
-                metadata, metadata.GetImage(id), pixelCenters,
-                pixelBinCenterDifferences, info)
+                metadata,
+                metadata.GetImage(id),
+                pixelCenters,
+                pixelBinCenterDifferences,
+                info,
+            )
             megaVoxelProfile, fgMegaVoxel, dump = self.getMegaVoxelProfile(
-                superVoxel.superVoxelBinCenters, superVoxelProfile,
-                info, fgSuperVoxel, training, analysis=False)
+                superVoxel.superVoxelBinCenters,
+                superVoxelProfile,
+                info,
+                fgSuperVoxel,
+                training,
+                analysis=False,
+            )
             if len(megaVoxelsforTraining) == 0:
                 megaVoxelsforTraining = megaVoxelProfile[fgMegaVoxel]
             else:
                 megaVoxelsforTraining = np.concatenate(
-                    (megaVoxelsforTraining, megaVoxelProfile[fgMegaVoxel]))
+                    (megaVoxelsforTraining, megaVoxelProfile[fgMegaVoxel])
+                )
         # megaVoxelBinCenters is an np array that represents the megavoxels
         # This choice of seed is associated with unit tests in VoxelGroups.py
         if metadata.Generator.seed == 1234:
@@ -61,6 +75,13 @@ class MegaVoxelImage(VoxelBase):
         else:
             random_state = None
         self.megaVoxelBinCenters = self.getPixelBins(
-            megaVoxelsforTraining, metadata, self.numMegaVoxelBins, random_state=random_state)
+            megaVoxelsforTraining,
+            metadata,
+            self.numMegaVoxelBins,
+            random_state=random_state,
+        )
+
     # end getMegaVoxelBinCenters
+
+
 # end class MegaVoxelImage

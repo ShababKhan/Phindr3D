@@ -13,7 +13,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
-import cv2
 
 try:
     from .VoxelBase import *
@@ -22,12 +21,15 @@ except ImportError:
     from VoxelBase import *
     from src.Data import DataFunctions
 
+
 class PixelImage(VoxelBase):
     """Image managed as pixels, derived from VoxelBase class."""
+
     def __init__(self):
         """Construct base class and define additional member variable."""
         super().__init__()
         self.pixelBinCenters = None  # np array
+
     # end constructor
 
     def getPixelBinCenters(self, metadata, training):
@@ -43,8 +45,9 @@ class PixelImage(VoxelBase):
             info = metadata.getTileInfo(d, metadata.theTileInfo)
             randZ = d[2] // 2
             iTmp = self.getTrainingPixels(
-                metadata.GetImage(id), metadata, randZ, training, metadata.theTileInfo)
-            pixelsForTraining[startVal:endVal + iTmp.shape[0], :] = iTmp
+                metadata.GetImage(id), metadata, randZ, training, metadata.theTileInfo
+            )
+            pixelsForTraining[startVal : endVal + iTmp.shape[0], :] = iTmp
             startVal += iTmp.shape[0]
             endVal += iTmp.shape[0]
         pixelsForTraining = pixelsForTraining[np.sum(pixelsForTraining, axis=1) > 0, :]
@@ -54,65 +57,102 @@ class PixelImage(VoxelBase):
         else:
             random_state = None
         self.pixelBinCenters = self.getPixelBins(
-            pixelsForTraining, metadata, self.numVoxelBins, random_state=random_state)
+            pixelsForTraining, metadata, self.numVoxelBins, random_state=random_state
+        )
+
     # end getPixelBinCenters
 
     def getTrainingPixels(self, image, metadata, randZ, training, tileinfo):
         """Choose a subset of pixels to be used in getPixelBins."""
         slices = list(image.stackLayers)
         slices = np.array(
-            [slices[i] for i in metadata.Generator.Generator.choice(
-                len(slices), size=randZ, replace=False, shuffle=False)])
-        trPixels = np.zeros((training.pixelsPerImage * randZ, metadata.GetNumChannels()))
+            [
+                slices[i]
+                for i in metadata.Generator.Generator.choice(
+                    len(slices), size=randZ, replace=False, shuffle=False
+                )
+            ]
+        )
+        trPixels = np.zeros(
+            (training.pixelsPerImage * randZ, metadata.GetNumChannels())
+        )
         startVal = 0
         if metadata.intensityNormPerTreatment:
             treatmentColumnName = metadata.GetTreatmentColumnName()
             grpVal = np.argwhere(
-                np.array(metadata.GetTreatmentTypes()) == image.GetTreatment(treatmentColumnName))[0][0]
-        slices = slices[0:(len(slices) // 2)]
+                np.array(metadata.GetTreatmentTypes())
+                == image.GetTreatment(treatmentColumnName)
+            )[0][0]
+        slices = slices[0 : (len(slices) // 2)]
         for zplane in slices:
-            croppedIM = np.zeros((tileinfo.origX, tileinfo.origY, metadata.GetNumChannels()))
+            croppedIM = np.zeros(
+                (tileinfo.origX, tileinfo.origY, metadata.GetNumChannels())
+            )
             for jChan in range(metadata.GetNumChannels()):
                 if metadata.intensityNormPerTreatment:
                     img = image.stackLayers[zplane].channels[jChan + 1].channelpath
                     croppedIM[:, :, jChan] = DataFunctions.rescaleIntensity(
-                        tf.imread(img), low=metadata.lowerbound[grpVal][jChan],
-                        high=metadata.upperbound[grpVal][jChan])  # add params later
+                        tf.imread(img),
+                        low=metadata.lowerbound[grpVal][jChan],
+                        high=metadata.upperbound[grpVal][jChan],
+                    )  # add params later
                 else:
                     img = image.stackLayers[zplane].channels[jChan + 1].channelpath
                     croppedIM[:, :, jChan] = DataFunctions.rescaleIntensity(
-                        tf.imread(img), low=metadata.lowerbound[jChan],
-                        high=metadata.upperbound[jChan]) # add params later
+                        tf.imread(img),
+                        low=metadata.lowerbound[jChan],
+                        high=metadata.upperbound[jChan],
+                    )  # add params later
             xEnd = -tileinfo.xOffsetEnd
             if xEnd == -0:
                 xEnd = None
             yEnd = -tileinfo.yOffsetEnd
             if yEnd == -0:
                 yEnd = None
-            croppedIM = croppedIM[tileinfo.xOffsetStart:xEnd, tileinfo.yOffsetStart:yEnd, :]
-            croppedIM = np.reshape(
-                croppedIM, (tileinfo.croppedX * tileinfo.croppedY,
-                metadata.GetNumChannels()))
             croppedIM = croppedIM[
-                np.sum(croppedIM > metadata.intensityThreshold, axis=1) >= metadata.GetNumChannels() / 3, :]
+                tileinfo.xOffsetStart : xEnd, tileinfo.yOffsetStart : yEnd, :
+            ]
+            croppedIM = np.reshape(
+                croppedIM,
+                (tileinfo.croppedX * tileinfo.croppedY, metadata.GetNumChannels()),
+            )
+            croppedIM = croppedIM[
+                np.sum(croppedIM > metadata.intensityThreshold, axis=1)
+                >= metadata.GetNumChannels() / 3,
+                :,
+            ]
             croppedIM = self.selectPixelsbyWeights(croppedIM, metadata)
             if croppedIM.shape[0] >= training.pixelsPerImage:
-                trPixels[startVal:startVal + training.pixelsPerImage, :] \
-                    = np.array([croppedIM[i, :] for i in metadata.Generator.Generator.choice(
-                        croppedIM.shape[0], size=training.pixelsPerImage,
-                        replace=False, shuffle=False)])
+                trPixels[startVal : startVal + training.pixelsPerImage, :] = np.array(
+                    [
+                        croppedIM[i, :]
+                        for i in metadata.Generator.Generator.choice(
+                            croppedIM.shape[0],
+                            size=training.pixelsPerImage,
+                            replace=False,
+                            shuffle=False,
+                        )
+                    ]
+                )
                 startVal += training.pixelsPerImage
             else:
-                trPixels[startVal:(startVal+croppedIM.shape[0])] = croppedIM
+                trPixels[startVal : (startVal + croppedIM.shape[0])] = croppedIM
                 startVal += croppedIM.shape[0]
         if trPixels.size == 0:
-            trPixels = np.zeros((training.pixelsPerImage * randZ, metadata.GetNumChannels()))
+            trPixels = np.zeros(
+                (training.pixelsPerImage * randZ, metadata.GetNumChannels())
+            )
         return trPixels
+
     # end getTrainingPixels
 
     def selectPixelsbyWeights(self, x, metadata):
         """Select pixels by weights."""
-        n, bin_edges = np.histogram(x, bins=(int(1 / 0.025) + 1), range=(0, 1), )
+        n, bin_edges = np.histogram(
+            x,
+            bins=(int(1 / 0.025) + 1),
+            range=(0, 1),
+        )
         q = np.digitize(x, bin_edges)
         n = n / np.sum(n)
         p = np.zeros(q.shape)
@@ -123,5 +163,8 @@ class PixelImage(VoxelBase):
         p = p != 0
         p = x[p, :]
         return p
+
     # end selectPixelsbyWeights
+
+
 # end class PixelImage

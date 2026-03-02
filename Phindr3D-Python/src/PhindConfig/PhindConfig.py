@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
+
 class PhindConfig:
     """Static configuration parameters for Phindr3D.
 
@@ -32,10 +33,12 @@ class PhindConfig:
         """
         from matplotlib import colors
         from numpy import random
+
         temp_cmap = random.rand(map_len, 3)
         if black_background:
             temp_cmap[0] = 0
         return colors.ListedColormap(temp_cmap)
+
     # end random_cmap
 
     # Number of categories for binning
@@ -53,7 +56,7 @@ class PhindConfig:
     # Visualization
     showBinCenters = False
     showImage = False
-    showChannels = False # show individual channels instead of rgb images.
+    showChannels = False  # show individual channels instead of rgb images.
 
     # Include texture features of supervoxel image
     textureFeatures = False
@@ -68,11 +71,14 @@ class PhindConfig:
     numRemoveZEnd = 1
     computeTAS = False
     trainingPerColumn = False
-    superVoxelPerField = randTrainingSuperVoxel//randTrainingFields
+    superVoxelPerField = randTrainingSuperVoxel // randTrainingFields
 
-    svcolormap = random_cmap(map_len=numSuperVoxelBins+1)
-    mvcolormap = random_cmap(map_len=numMegaVoxelBins+1)
+    svcolormap = random_cmap(map_len=numSuperVoxelBins + 1)
+    mvcolormap = random_cmap(map_len=numMegaVoxelBins + 1)
+
+
 # end class PhindConfig
+
 
 class TileInfo:
     """Contains configuration parameters for tiles, voxels, offsets, etc.
@@ -80,6 +86,7 @@ class TileInfo:
     Many parameters are defined in the getTileInfo method.
     They are defined and set to 'None' at __init__ in this class.
     """
+
     def __init__(self):
         """Define the initial parameters for the TileInfo class."""
         # Super-Voxel dimensions
@@ -126,5 +133,8 @@ class TileInfo:
         self.numSuperVoxelsXY = None
         self.numMegaVoxels = None
         self.numMegaVoxelsXY = None
+
     # end constructor
+
+
 # end class TileInfo

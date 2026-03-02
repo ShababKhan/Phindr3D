@@ -19,6 +19,7 @@ try:
 except ImportError:
     from Stack import Stack
 
+
 class Image:
     """This class handles groups of image files and the associated metadata."""
 
@@ -38,13 +39,16 @@ class Image:
         layerlist is a list of rows of metadata, each represented as a list of data elements
         """
         for layer in layerlist:
-            key = layer[layer.__len__() - 3] # index len - 3 will always be stack column
+            key = layer[
+                layer.__len__() - 3
+            ]  # index len - 3 will always be stack column
             newStackLayer = Stack()
             newStackLayer.addChannels(layer, columnlabels)
             self.stackLayers[key] = newStackLayer
+
     # end addStackLayers
 
-    def GetTreatment(self, treatmentColumnName='Treatment'):
+    def GetTreatment(self, treatmentColumnName="Treatment"):
         """Get the Treatment values from the member stackLayers, if they exist.
 
         Treatment is an optional column in the metadata. Treatment values are stored
@@ -54,13 +58,15 @@ class Image:
         treatmentColumnName has a default value of 'Treatment'. If the value of
         treatmentColumnName is 'ImageID', this method returns this Image ID.
         """
-        if treatmentColumnName == 'ImageID':
-            return (self.imageID)
+        if treatmentColumnName == "ImageID":
+            return self.imageID
         # else
         tmpList = []
         try:
             for stkID in self.stackLayers:
-                tmpList.append(self.stackLayers[stkID].GetTreatment(treatmentColumnName))
+                tmpList.append(
+                    self.stackLayers[stkID].GetTreatment(treatmentColumnName)
+                )
         except AttributeError:
             return None
         # Use set to find unique values in a list, then change type back to list
@@ -71,12 +77,14 @@ class Image:
             return None
         else:
             return treatmentValList[0]
+
     # end GetTreatment
 
     def GetOtherParams(self):
         """Get otherparams attribute from first stack instance in stacklayers."""
         for stack in self.stackLayers:
             return self.stackLayers[stack].otherparams
+
     # end GetOtherParams
 
     def GetNumChannels(self):
@@ -97,5 +105,8 @@ class Image:
             return None
         else:
             return channelValList[0]
+
     # end GetNumChannels
+
+
 # end class Image
